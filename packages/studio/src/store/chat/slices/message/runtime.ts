@@ -33,6 +33,7 @@ const TOOL_LABELS: Record<string, readonly [string, string, string]> = {
   play_step: ["推进互动世界", "Advance interactive world", "인터랙티브 월드 진행"],
   create_book: ["创建长篇", "Create long-form Work", "장편 만들기"],
   create_work: ["创建作品", "Create Work", "작품 만들기"],
+  generate: ["生成当前作品", "Generate current work", "현재 작품 생성"],
   export_work: ["导出作品", "Export Work", "작품 내보내기"],
   review_and_export_work_artifact: ["审稿并导出", "Review and export", "검토 후 내보내기"],
   review_work_artifact: ["审稿", "Review artifact", "원고 검토"],
