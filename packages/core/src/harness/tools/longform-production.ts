@@ -11,11 +11,12 @@ import { runAsWorkflowTrajectory } from "../../llm/agent-trajectory.js";
 import {StateManager} from "../../state/manager.js";
 import type {WorkManifest} from "../contracts.js";
 import type {BookConfig} from "../../models/book.js";
+import { isWritingLanguage, type WritingLanguage } from "../../utils/writing-language.js";
 
 interface LongformToolOptions {
   readonly activeWork?: {readonly work:WorkManifest;readonly projectRoot:string};
   readonly actionPayload?: ActionPayload;
-  readonly language?: "zh" | "en";
+  readonly language?: WritingLanguage;
   readonly activeSkills?: () => ReadonlyArray<ActivatedSkillGuidance>;
   readonly workerSkills?: (worker: string) => ReadonlyArray<ActivatedSkillGuidance>;
 }
@@ -26,7 +27,7 @@ const BookCreateParams = Type.Object({
   bookId: Type.Optional(Type.String()),
   genre: Type.Optional(Type.String()),
   platform: Type.Optional(Type.String({ minLength: 1 })),
-  language: Type.Optional(Type.Union([Type.Literal("zh"), Type.Literal("en")])),
+  language: Type.Optional(Type.Union([Type.Literal("zh"), Type.Literal("en"), Type.Literal("ko")])),
   targetChapters: Type.Optional(Type.Integer({ minimum: 1 })),
   chapterWordCount: Type.Optional(Type.Integer({ minimum: 1 })),
   minChapterLength: Type.Optional(Type.Integer({minimum:1,description:"Lower end of an explicitly requested per-chapter range. Preserve it as a Work constraint."})),
@@ -129,7 +130,7 @@ export function createBookFoundationTool(
           if(await state.isCompleteBookDirectory(state.bookDir(id)))throw Object.assign(new Error("The current book is already initialized; use its foundation or chapter revision action."),{code:"BOOK_ALREADY_INITIALIZED"});
           try{existing=await state.loadBookConfig(id);}catch(error){if((error as NodeJS.ErrnoException).code!=="ENOENT")throw error;}
         }
-        const language = existing?.language ?? (options.activeWork ? options.activeWork.work.language==="en"?"en":"zh" : payload?.language ?? params.language ?? options.language ?? "zh");
+        const language = existing?.language ?? (options.activeWork ? (isWritingLanguage(options.activeWork.work.language)?options.activeWork.work.language:"zh") : payload?.language ?? params.language ?? options.language ?? "zh");
         const skills = activatedSkills(options, "architect");
         const now = new Date().toISOString();
         progress(onUpdate, `Creating foundation for "${id}"...`);

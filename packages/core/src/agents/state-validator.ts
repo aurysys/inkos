@@ -1,6 +1,7 @@
 import { BaseAgent } from "./base.js";
 import { StateValidationToolSchema } from "./state-validation-tool.js";
 import type { Observation } from "../models/observation.js";
+import { proseLanguageName, toPromptLanguage, type WritingLanguage } from "../utils/writing-language.js";
 
 export interface ValidationResult {
   readonly observations: ReadonlyArray<Observation>;
@@ -32,15 +33,16 @@ export class StateValidatorAgent extends BaseAgent {
     newState: string,
     oldHooks: string,
     newHooks: string,
-    language: "zh" | "en" = "zh",
+    writingLanguage: WritingLanguage = "zh",
     authorityContext?: StateValidationAuthorityContext,
   ): Promise<ValidationResult> {
     if (oldState === newState && oldHooks === newHooks) {
       return { observations: [], consistent: true, reconciliationRequired: false };
     }
 
+    const language = toPromptLanguage(writingLanguage);
     const langInstruction = language === "en"
-      ? "Respond in English."
+      ? `Respond in ${proseLanguageName(writingLanguage)}.`
       : "用中文回答。";
 
     const systemPrompt = `Validate the derived truth projection against the current chapter and supplied authority using the activated long-writing Skill. ${langInstruction}

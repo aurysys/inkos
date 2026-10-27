@@ -21,6 +21,7 @@ import { join } from "node:path";
 import { persistProjectSession } from "./session-store.js";
 import { buildPipelineConfig, loadConfig } from "../utils.js";
 import { isKoreanUi } from "../ui-locale.js";
+import { toPromptLanguage } from "@actalk/inkos-core";
 
 function uiCopy(language: "zh" | "en", zh: string, en: string, ko: string): string {
   if (isKoreanUi()) return ko;
@@ -60,7 +61,8 @@ export async function processTuiAgentInput(params: {
   );
   const userTimestamp = Date.now();
   const currentBookId = params.activeBookId ?? params.session.activeBookId ?? null;
-  const language = config.language === "en" ? "en" : "zh";
+  // Korean projects drive the agent with the English prompt set.
+  const language = toPromptLanguage(config.language);
   const useWork = params.input.trim().match(/^\/use\s+([^\s]+)$/i)?.[1];
   const selectedWork = useWork ? await loadWorkManifest(params.projectRoot, useWork) : null;
   const localWorkResponse = selectedWork

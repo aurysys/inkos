@@ -1,5 +1,5 @@
 import { useApi } from "./use-api";
-import { getUiLocalePreference } from "../lib/app-language";
+import { getUiLocalePreference, isWritingLanguage, type WritingLanguage } from "../lib/app-language";
 
 type Lang = "zh" | "en";
 
@@ -377,8 +377,10 @@ type LocalizedEntry = { readonly zh: string; readonly en: string; readonly ko?: 
 
 export function useI18n() {
   const { data } = useApi<{ language: string }>("/project");
-  const lang: Lang = data?.language === "en" ? "en" : "zh";
-  const uiLocale = getUiLocalePreference() === "ko" ? "ko" : lang;
+  // projectLanguage is the writing language (zh/en/ko); lang is the zh/en copy language.
+  const projectLanguage: WritingLanguage = isWritingLanguage(data?.language) ? data.language : "zh";
+  const lang: Lang = projectLanguage === "zh" ? "zh" : "en";
+  const uiLocale = getUiLocalePreference() === "ko" || projectLanguage === "ko" ? "ko" : lang;
 
   function t(key: StringKey): string {
     const entry: LocalizedEntry = strings[key];
@@ -386,5 +388,5 @@ export function useI18n() {
     return entry[lang];
   }
 
-  return { t, lang, uiLocale };
+  return { t, lang, uiLocale, projectLanguage };
 }

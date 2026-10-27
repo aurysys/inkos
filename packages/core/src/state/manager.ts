@@ -14,6 +14,7 @@ import {
 } from "../harness/work-store.js";
 import { syncWorkSourceArtifacts } from "../harness/source-sync.js";
 import { commitAtomicFileSet } from "../utils/atomic-file-set.js";
+import { toPromptLanguage } from "../utils/writing-language.js";
 
 const BOOK_LOCK_HEARTBEAT_MS = 30_000;
 const BOOK_LOCK_LEASE_MS = 3 * 60_000;
@@ -123,7 +124,7 @@ export class StateManager {
 
   private async resolveControlDocumentLanguage(bookId: string): Promise<"zh" | "en"> {
     const raw = await readFile(join(this.bookDir(bookId), "book.json"), "utf-8");
-    return BookConfigSchema.parse(JSON.parse(raw)).language;
+    return toPromptLanguage(BookConfigSchema.parse(JSON.parse(raw)).language);
   }
 
   async acquireBookLock(bookId: string): Promise<() => Promise<void>> {

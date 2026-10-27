@@ -3,6 +3,7 @@ import { dirname, join } from "node:path";
 import { EPub } from "epub-gen-memory";
 import {renderChapterDocument} from '../utils/chapter-document.js';
 import {readChapterHeading} from '../utils/chapter-splitter.js';
+import { isWritingLanguage } from "../utils/writing-language.js";
 
 export interface ExportStateLike {
   readonly bookDir: (bookId: string) => string;
@@ -113,7 +114,7 @@ export async function buildExportArtifact(
     const raw = await readFile(join(chaptersDir, file), 'utf-8');
     const heading = readChapterHeading(raw.trimStart().split(/\r?\n/u)[0] ?? '');
     return renderChapterDocument(chapter.number, chapter.title ?? heading?.title ?? file.replace(/^\d+_/u,'').replace(/\.md$/u,''), raw,
-      book.language === 'en' || book.language === undefined && heading?.language === 'en' ? 'en' : 'zh');
+      isWritingLanguage(book.language) ? book.language : heading?.language ?? 'zh');
   };
 
   if (format === "epub") {
@@ -128,7 +129,7 @@ export async function buildExportArtifact(
       epubChapters.push({ title, content: html });
     }
     const epubInstance = new EPub(
-      { title: book.title, lang: book.language === "en" ? "en" : "zh-CN" },
+      { title: book.title, lang: book.language === "en" ? "en" : book.language === "ko" ? "ko" : "zh-CN" },
       epubChapters,
     );
     return {

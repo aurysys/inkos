@@ -5,6 +5,7 @@ import type { ActivatedSkillGuidance } from "../agent/skill-tool.js";
 import { loadAvailableAgentSkills, mergeActivatedSkillGuidance } from "../skills/index.js";
 import { estimateTextTokens } from "../llm/provider.js";
 import { semanticInputBudget, splitTextByEstimatedTokens } from "../llm/semantic-input.js";
+import { toPromptLanguage, writingLanguageDirective, type WritingLanguage } from "../utils/writing-language.js";
 
 export interface ImportedChapterSource {
   readonly title: string;
@@ -13,9 +14,11 @@ export interface ImportedChapterSource {
 
 export function renderCompleteImportSource(
   chapters: ReadonlyArray<ImportedChapterSource>,
-  language: "zh" | "en",
+  language: WritingLanguage,
 ): string {
-  return chapters.map((chapter, index) => language === "en"
+  return chapters.map((chapter, index) => language === "ko"
+    ? `제${index + 1}장 ${chapter.title}\n\n${chapter.content}`
+    : language === "en"
     ? `Chapter ${index + 1}: ${chapter.title}\n\n${chapter.content}`
     : `第${index + 1}章 ${chapter.title}\n\n${chapter.content}`)
     .join("\n\n---\n\n");
@@ -26,10 +29,11 @@ export async function compileImportSource(input: {
   readonly model: string;
   readonly projectRoot: string;
   readonly chapters: ReadonlyArray<ImportedChapterSource>;
-  readonly language: "zh" | "en";
+  readonly language: WritingLanguage;
   readonly activeSkills?: ReadonlyArray<ActivatedSkillGuidance>;
   readonly signal?: AbortSignal;
 }): Promise<{ readonly markdown: string; readonly compiled: boolean; readonly chunkCount: number }> {
+  const promptLanguage = toPromptLanguage(input.language);
   const complete = renderCompleteImportSource(input.chapters, input.language);
   const budget = semanticInputBudget(input.client, { reservedOutputTokens: 16_384 });
   if (budget === undefined || estimateTextTokens(complete) <= budget) {
@@ -49,9 +53,9 @@ export async function compileImportSource(input: {
     const response = await runWorkerAgent(input.client, input.model, await prepareWorkerMessages({ ...input, activatedSkills: mergeActivatedSkillGuidance(input.activeSkills ?? [], skills) }, [
       {
         role: "system",
-        content: input.language === "en"
+        content: [writingLanguageDirective(input.language), promptLanguage === "en"
           ? "Apply the activated import and continuation Skills to this complete source chunk. Return traceable Markdown only."
-          : "按已激活的导入与续写 Skill 处理这份完整源片段，只返回可追溯 Markdown。",
+          : "按已激活的导入与续写 Skill 处理这份完整源片段，只返回可追溯 Markdown。"].filter(Boolean).join("\n\n"),
       },
       { role: "user", content: `Source chunk ${index + 1}/${chunks.length}\n\n${chunk}` },
     ], undefined, "import-context"), {
@@ -60,16 +64,16 @@ export async function compileImportSource(input: {
     });
     const body = response.content.trim();
     if (!body) throw new Error(`Import context compiler returned empty output for chunk ${index + 1}/${chunks.length}.`);
-    compiled.push(`## ${input.language === "en" ? "Compiled source chunk" : "编译源片段"} ${index + 1}/${chunks.length}\n\n${body}`);
+    compiled.push(`## ${promptLanguage === "en" ? "Compiled source chunk" : "编译源片段"} ${index + 1}/${chunks.length}\n\n${body}`);
   }
-  const catalog = input.chapters.map((chapter, index) => input.language === "en"
+  const catalog = input.chapters.map((chapter, index) => promptLanguage === "en"
     ? `- Chapter ${index + 1}: ${chapter.title}`
     : `- 第${index + 1}章：${chapter.title}`).join("\n");
   return {
     markdown: [
-      input.language === "en" ? "# Compiled import context" : "# 编译后的导入上下文",
+      promptLanguage === "en" ? "# Compiled import context" : "# 编译后的导入上下文",
       "",
-      input.language === "en" ? "## Complete chapter catalog" : "## 完整章节目录",
+      promptLanguage === "en" ? "## Complete chapter catalog" : "## 完整章节目录",
       catalog,
       "",
       ...compiled,

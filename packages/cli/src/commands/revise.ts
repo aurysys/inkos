@@ -6,6 +6,7 @@ import {
   createReviseChapterTool,
   executeExplicitCapabilityTool,
   type ReviseMode,
+  resolveLengthCountingMode,
 } from "@actalk/inkos-core";
 import { loadConfig, buildPipelineConfig, findProjectRoot, resolveBookId, log, logError, resolveCliProfileSkills } from "../utils.js";
 import {
@@ -98,6 +99,7 @@ export const reviseCommand = new Command("revise")
             changed: result.changed,
             wordCount: result.wordCount,
             observationCount: result.observations.length,
+            countingMode: resolveLengthCountingMode(book.language),
           }),
         }, config);
       }

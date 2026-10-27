@@ -61,6 +61,7 @@ import { loadAvailableAgentSkills, mergeActivatedSkillGuidance } from "../skills
 import { commitAtomicFileSet } from "../utils/atomic-file-set.js";
 import { compileStyleGuide } from "../agents/style-guide.js";
 import { compileImportSource, renderCompleteImportSource } from "../agents/import-context.js";
+import { toPromptLanguage } from "../utils/writing-language.js";
 
 function mergeChapterRevisionInstructions(
   persistedBrief: string,
@@ -251,7 +252,7 @@ export class PipelineRunner {
   }
 
   private localize(language: LengthLanguage, messages: { zh: string; en: string }): string {
-    return language === "en" ? messages.en : messages.zh;
+    return toPromptLanguage(language) === "en" ? messages.en : messages.zh;
   }
 
   private async resolveBookLanguage(
@@ -270,6 +271,7 @@ export class PipelineRunner {
   }
 
   private languageFromLengthSpec(lengthSpec: Pick<LengthSpec, "countingMode">): LengthLanguage {
+    if (lengthSpec.countingMode === "ko_chars") return "ko";
     return lengthSpec.countingMode === "en_words" ? "en" : "zh";
   }
 
@@ -497,7 +499,7 @@ export class PipelineRunner {
       this.logStage(stageLanguage, { zh: "初始化控制文档", en: "initializing control documents" });
       await this.state.ensureControlDocumentsAt(
         stagingBookDir,
-        book.language,
+        toPromptLanguage(book.language),
         options.authorIntent ?? effectiveExternalContext,
       );
       if (options.currentFocus?.trim()) {
@@ -680,7 +682,7 @@ export class PipelineRunner {
     const { FanficCanonImporter } = await import("../agents/fanfic-canon-importer.js");
     const importer = new FanficCanonImporter(this.agentCtxFor("fanfic-canon-importer", bookId));
     const language = await this.resolveBookLanguageById(bookId);
-    const result = await importer.importFromText(sourceText, sourceName, fanficMode, language);
+    const result = await importer.importFromText(sourceText, sourceName, fanficMode, toPromptLanguage(language));
 
     const bookDir = this.state.bookDir(bookId);
     const storyDir = join(bookDir, "story");
@@ -754,7 +756,7 @@ export class PipelineRunner {
 
       const architect = new ArchitectAgent(this.agentCtxFor("architect", book.id));
       const resolvedLanguage = book.language;
-      const spinoffContext = buildSpinoffFoundationContext(parentCanon, direction, resolvedLanguage);
+      const spinoffContext = buildSpinoffFoundationContext(parentCanon, direction, toPromptLanguage(resolvedLanguage));
 
       this.logStage(stageLanguage, { zh: "生成番外基础设定", en: "generating side-story foundation" });
       const foundation = await architect.generateFoundation(book, spinoffContext, undefined, {
@@ -828,7 +830,7 @@ export class PipelineRunner {
     const content = await this.readChapterContent(bookDir, targetChapter);
     const chapterBrief = await readChapterUserBrief(bookDir, targetChapter);
     const governed = await this.prepareExistingChapterContext(book,targetChapter,
-      chapterBrief ?? (book.language==='en'?`Review existing chapter ${targetChapter}.`:`审查现有第${targetChapter}章。`));
+      chapterBrief ?? (toPromptLanguage(book.language)==='en'?`Review existing chapter ${targetChapter}.`:`审查现有第${targetChapter}章。`));
     const auditor = new ContinuityAuditor(this.agentCtxFor("auditor", bookId));
     const language = book.language;
     this.logStage(language, {
@@ -907,7 +909,7 @@ export class PipelineRunner {
         persistedChapterBrief,
         externalContext ?? this.config.externalContext,
       );
-      const revisionIntent=effectiveExternalContext?.trim() || (language==='en'
+      const revisionIntent=effectiveExternalContext?.trim() || (toPromptLanguage(language)==='en'
         ? `Review and revise the existing chapter ${targetChapter} in ${mode} mode.`
         : `审查并以 ${mode} 模式修订现有第${targetChapter}章。`);
       const reviseControlInput=await this.prepareExistingChapterContext(book,targetChapter,revisionIntent);
@@ -916,7 +918,7 @@ export class PipelineRunner {
         || mode === "rewrite"
         || mode === "rework";
       const preRevision = explicitRevisionRequested
-        ? { observations: [], summary: language === "en" ? "User-directed revision" : "用户定向修订" }
+        ? { observations: [], summary: toPromptLanguage(language) === "en" ? "User-directed revision" : "用户定向修订" }
         : await this.collectReviewObservations({
             auditor,
             book,
@@ -980,7 +982,7 @@ export class PipelineRunner {
         mode,
         book.genre,
         {
-          language,
+          language: toPromptLanguage(language),
           chapterTitle:chapterMeta.title,
           targetText:editScope?.targetText,
           contextPackage: reviseControlInput.contextPackage,
@@ -1086,7 +1088,7 @@ export class PipelineRunner {
       if (changed) await archiveChapterVersion(bookDir, targetChapter, content, "revision");
       const reviseLang = book.language;
 
-      const downstreamRevisionNotice = language === "en"
+      const downstreamRevisionNotice = toPromptLanguage(language) === "en"
         ? `Chapter ${targetChapter} changed; re-review this downstream chapter for continuity.`
         : `第${targetChapter}章已重写，请重新检查本章与前文的连续性。`;
       const updatedIndex = index.map((ch) => {
@@ -1519,7 +1521,7 @@ export class PipelineRunner {
       chapterSummaries:renderChapterSummariesProjection(baselineSnapshot.chapterSummaries,pipelineLang)};
 
     const reducedControlInput = await this.prepareExistingChapterContext(book,targetChapter,
-      this.config.externalContext ?? (pipelineLang==='en'?`Reconstruct facts from existing chapter ${targetChapter}, preserving its prose.`:`根据现有第${targetChapter}章重建事实，保持正文。`));
+      this.config.externalContext ?? (toPromptLanguage(pipelineLang)==='en'?`Reconstruct facts from existing chapter ${targetChapter}, preserving its prose.`:`根据现有第${targetChapter}章重建事实，保持正文。`));
 
     const writer = new WriterAgent(this.agentCtxFor("writer", bookId));
     let syncedOutput = await writer.settleChapterState({
@@ -1621,7 +1623,7 @@ export class PipelineRunner {
       projectRoot: this.config.projectRoot,
       referenceText: sample,
       sourceName,
-      language,
+      language: toPromptLanguage(language),
       activeSkills: this.currentActivatedSkills("style-guide"),
       signal: this.currentAbortSignal(),
     });
@@ -1759,7 +1761,7 @@ export class PipelineRunner {
         this.throwIfOperationAborted();
         const ch = input.chapters[i]!;
         const chapterNumber = i + 1;
-        const chapterIntent=resolvedLanguage==='en'
+        const chapterIntent=toPromptLanguage(resolvedLanguage)==='en'
           ? `Reconstruct the established facts and unresolved threads of imported chapter ${chapterNumber}. Preserve the supplied source text.`
           : `重建导入的第${chapterNumber}章已发生的事实和未解决线索，保留输入原文。`;
         const {contextPackage}=await this.prepareExistingChapterContext(book,chapterNumber,chapterIntent);
@@ -1971,7 +1973,7 @@ export class PipelineRunner {
   }
 
   private buildImportReplayStateSeed(language: LengthLanguage): string {
-    if (language === "en") {
+    if (toPromptLanguage(language) === "en") {
       return [
         "# Current State",
         "",
@@ -2005,7 +2007,7 @@ export class PipelineRunner {
   }
 
   private buildImportReplayHooksSeed(language: LengthLanguage): string {
-    if (language === "en") {
+    if (toPromptLanguage(language) === "en") {
       return [
         "# Pending Hooks",
         "",
@@ -2069,7 +2071,7 @@ export class PipelineRunner {
       params.chapterNumber,
       params.book.genre,
       {
-        language: params.language,
+        language: toPromptLanguage(params.language),
         contextPackage,
         ...(params.auditOptions.temperature === undefined ? {} : { temperature: params.auditOptions.temperature }),
       },
@@ -2116,7 +2118,7 @@ export class PipelineRunner {
 
   private async prepareExistingChapterContext(book:BookConfig,chapterNumber:number,chapterIntent:string) {
     const contextPackage=await new ComposerAgent(this.agentCtxFor('composer',book.id)).selectTaskContext({
-      bookDir:this.state.bookDir(book.id),chapterNumber,goal:chapterIntent,language:book.language,
+      bookDir:this.state.bookDir(book.id),chapterNumber,goal:chapterIntent,language:toPromptLanguage(book.language),
     });
     const rules=await readFile(join(this.state.bookDir(book.id),'story/book_rules.md'),'utf8');
     return {chapterIntent,contextPackage:{...contextPackage,selectedContext:[...contextPackage.selectedContext,

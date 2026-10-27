@@ -4,7 +4,8 @@ export function deriveBookIdFromTitle(title: string): string {
   return title
     .trim()
     .toLowerCase()
-    .replace(/[^a-z0-9\u4e00-\u9fff]/gu, "-")
+    // Keep Latin, CJK and Hangul so Chinese and Korean titles yield readable ids.
+    .replace(/[^a-z0-9\u4e00-\u9fff\uac00-\ud7a3]/gu, "-")
     .replace(/-+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 30);

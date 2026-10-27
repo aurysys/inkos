@@ -1,5 +1,5 @@
-import { formatLengthCount, resolveLengthCountingMode, type Observation } from "@actalk/inkos-core";
-import { isKoreanUi } from "./ui-locale.js";
+import { DEFAULT_CHAPTER_LENGTH_KO, formatLengthCount, isWritingLanguage, resolveLengthCountingMode, type LengthCountingMode, type Observation, type WritingLanguage } from "@actalk/inkos-core";
+import { isKoreanUi, uiText } from "./ui-locale.js";
 
 export type CliLanguage = "zh" | "en";
 
@@ -8,6 +8,8 @@ type WriteResultShape = {
   readonly title: string;
   readonly wordCount: number;
   readonly observations: ReadonlyArray<Observation>;
+  /** The book's length unit; defaults to the CLI language's unit. */
+  readonly countingMode?: LengthCountingMode;
 };
 
 type ImportResultShape = {
@@ -15,6 +17,8 @@ type ImportResultShape = {
   readonly totalWords: number;
   readonly nextChapter: number;
   readonly continueBookId: string;
+  /** The book's length unit; defaults to the CLI language's unit. */
+  readonly countingMode?: LengthCountingMode;
 };
 
 function localize(language: CliLanguage, messages: { zh: string; en: string; ko?: string }): string {
@@ -35,6 +39,28 @@ function normalizeCliLanguageTag(value: string | undefined): CliLanguage | undef
     return "zh";
   }
   return undefined;
+}
+
+/**
+ * Book writing language from --lang or the project default. Unlike the CLI
+ * display language (zh/en), ko is a valid writing language.
+ */
+export function resolveWritingLanguageOption(value: string | undefined, fallback: string | undefined): WritingLanguage {
+  const requested = value?.trim().toLowerCase();
+  if (requested) {
+    if (isWritingLanguage(requested)) return requested;
+    throw new Error(uiText(
+      `Unsupported writing language "${value}". Use zh, en or ko.`,
+      `지원하지 않는 집필 언어입니다: "${value}". zh, en, ko 중 하나를 쓰세요.`,
+    ));
+  }
+  return isWritingLanguage(fallback) ? fallback : resolveCliLanguage(fallback);
+}
+
+/** --chapter-words when given; otherwise the historical CLI default, or 5000 for Korean (spaces included). */
+export function resolveChapterLengthOption(value: string | undefined, language: WritingLanguage): number {
+  if (value !== undefined) return parseInt(value, 10);
+  return language === "ko" ? DEFAULT_CHAPTER_LENGTH_KO : 3000;
 }
 
 export function resolveCliLanguage(
@@ -117,7 +143,7 @@ export function formatWriteNextResultLines(
   language: CliLanguage,
   result: WriteResultShape,
 ): string[] {
-  const lengthLabel = formatLengthCount(result.wordCount, resolveLengthCountingMode(language));
+  const lengthLabel = formatLengthCount(result.wordCount, result.countingMode ?? resolveLengthCountingMode(language));
   const lines = [
     localize(language, {
       zh: `  第${result.chapterNumber}章：${result.title}`,
@@ -216,6 +242,7 @@ export function formatNotifyBatchWriteBody(
     readonly title: string;
     readonly wordCount: number;
     readonly observationCount: number;
+    readonly countingMode?: LengthCountingMode;
   }>,
 ): string {
   const first = chapters[0]!;
@@ -227,7 +254,7 @@ export function formatNotifyBatchWriteBody(
       ko: `이번에 ${chapters.length}개 챕터를 작성했습니다(${first.chapterNumber}장~${last.chapterNumber}장)`,
     }),
     ...chapters.map((ch) => {
-      const lengthLabel = formatLengthCount(ch.wordCount, resolveLengthCountingMode(language));
+      const lengthLabel = formatLengthCount(ch.wordCount, ch.countingMode ?? resolveLengthCountingMode(language));
       return localize(language, {
         zh: `第${ch.chapterNumber}章 ${ch.title} | ${lengthLabel} | ${ch.observationCount} 条观察`,
         en: `Chapter ${ch.chapterNumber} ${ch.title} | ${lengthLabel} | ${ch.observationCount} observation(s)`,
@@ -261,6 +288,7 @@ export function formatNotifyReviseBody(
     readonly changed: boolean;
     readonly wordCount: number;
     readonly observationCount: number;
+    readonly countingMode?: LengthCountingMode;
   },
 ): string {
   if (!result.changed) {
@@ -270,7 +298,7 @@ export function formatNotifyReviseBody(
       ko: `${result.chapterNumber}장에 적용할 수정 사항이 없습니다`,
     });
   }
-  const lengthLabel = formatLengthCount(result.wordCount, resolveLengthCountingMode(language));
+  const lengthLabel = formatLengthCount(result.wordCount, result.countingMode ?? resolveLengthCountingMode(language));
   return localize(language, {
     zh: `第${result.chapterNumber}章已修订 | ${lengthLabel} | 复审观察 ${result.observationCount} 条`,
     en: `Chapter ${result.chapterNumber} revised | ${lengthLabel} | ${result.observationCount} review observation(s)`,
@@ -314,7 +342,7 @@ export function formatImportChaptersComplete(
   language: CliLanguage,
   result: ImportResultShape,
 ): string[] {
-  const lengthLabel = formatLengthCount(result.totalWords, resolveLengthCountingMode(language));
+  const lengthLabel = formatLengthCount(result.totalWords, result.countingMode ?? resolveLengthCountingMode(language));
   return [
     localize(language, {
       zh: "导入完成：",
@@ -461,7 +489,7 @@ export function formatChapterSyncNoChanges(language: CliLanguage, checked: numbe
 export function formatChapterSyncChange(
   language: CliLanguage,
   change: { number: number; title: string; previousWordCount: number; wordCount: number },
-  countingMode: "zh_chars" | "en_words",
+  countingMode: "zh_chars" | "en_words" | "ko_chars",
 ): string {
   const from = formatLengthCount(change.previousWordCount, countingMode);
   const to = formatLengthCount(change.wordCount, countingMode);

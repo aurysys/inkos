@@ -1,7 +1,7 @@
 import type { BookConfig } from "../models/book.js";
 import type { BookRules } from "../models/book-rules.js";
 import type { LengthSpec } from "../models/length-governance.js";
-import { buildLengthSpec } from "../utils/length-metrics.js";
+import { buildLengthSpec, describeLengthUnit } from "../utils/length-metrics.js";
 
 /** Writer protocol. Narrative craft comes from the active long-writing Skill. */
 export function buildWriterSystemPrompt(
@@ -46,7 +46,7 @@ The current user instruction and chapter memo govern this chapter. Established f
 
 function lengthContract(spec: LengthSpec, language: "zh" | "en"): string {
   return language === "en"
-    ? `## Length\nUser target: ${spec.target} words. Preserve scene completeness instead of padding or cutting mechanically.`
+    ? `## Length\nUser target: ${spec.target} ${describeLengthUnit(spec.countingMode, "en")}. Preserve scene completeness instead of padding or cutting mechanically.`
     : `## 字数\n用户目标：${spec.target} 字。保持场景完整，不要机械注水或裁切。`;
 }
 

@@ -5,6 +5,7 @@ import {
   createImportCanonTool,
   createImportChaptersTool,
   executeExplicitCapabilityTool,
+  resolveLengthCountingMode,
 } from "@actalk/inkos-core";
 import { resolve } from "node:path";
 import { loadConfig, buildPipelineConfig, findProjectRoot, resolveBookId, log, logError, resolveCliProfileSkills } from "../utils.js";
@@ -73,7 +74,7 @@ importCommand
   .description(uiText("Import existing chapters for continuation writing. Reverse-engineers all truth files.", "이어쓰기를 위해 기존 챕터를 가져옵니다. 모든 설정 파일을 본문에서 역으로 추출합니다."))
   .argument("[book-id]", uiText("Target book ID (auto-detected if only one book)", "대상 책 ID(책이 하나뿐이면 자동으로 찾습니다)"))
   .requiredOption("--from <path>", uiText("Path to a text file (auto-split) or directory of .md/.txt files", "텍스트 파일(자동 분할) 또는 .md/.txt 파일이 든 디렉터리 경로"))
-  .option("--split <regex>", uiText("Custom regex for chapter splitting (single-file mode)", "챕터 분할에 쓸 사용자 정규식(단일 파일 모드)"))
+  .option("--split <regex>", uiText("Custom regex for chapter splitting (single-file mode). Default headings: 第N章, Chapter N, 제N장, N장, N화", "챕터 분할에 쓸 사용자 정규식(단일 파일 모드). 기본으로 第N章, Chapter N, 제N장, N장, N화 제목을 알아봅니다"))
   .option("--resume-from <n>", uiText("Resume from chapter N (for interrupted imports)", "N장부터 이어서 가져옵니다(중단된 가져오기용)"), parseInt)
   .option("--series", uiText("Treat as a new series (shared universe, independent story) instead of direct continuation", "바로 이어지는 속편이 아닌 새 시리즈(세계관 공유, 독립된 이야기)로 취급합니다"))
   .option("--json", uiText("Output JSON", "JSON으로 출력합니다"))
@@ -140,6 +141,7 @@ importCommand
           totalWords: result.totalWords,
           nextChapter: result.nextChapter,
           continueBookId: bookId,
+          countingMode: resolveLengthCountingMode(book.language),
         })) {
           log(line);
         }

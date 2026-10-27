@@ -6,6 +6,7 @@ import { renderHooksProjection } from "../state/state-projections.js";
 import { BookRulesSchema, type BookRules } from "../models/book-rules.js";
 import { FoundationDetailsToolSchema, FoundationOutlineToolSchema, FoundationCastIndexToolSchema, foundationCastDocumentsToolSchema } from "./architect-tool.js";
 import type { HookRecord } from "../models/runtime-state.js";
+import { proseLanguageName, toPromptLanguage, type WritingLanguage } from "../utils/writing-language.js";
 import { createInitialRuntimeState } from "../state/runtime-state-store.js";
 import { commitAtomicFileSet, type AtomicFileWrite } from "../utils/atomic-file-set.js";
 
@@ -48,7 +49,8 @@ export class ArchitectAgent extends BaseAgent {
       };
     },
   ): Promise<ArchitectOutput> {
-    const resolvedLanguage = book.language;
+    const resolvedLanguage = toPromptLanguage(book.language);
+    const proseLanguage = proseLanguageName(book.language);
 
     const contextBlock = externalContext
       ? `\n\n## 外部指令\n以下是来自外部系统的创作指令，请将其融入设定中：\n\n${externalContext}\n`
@@ -63,10 +65,10 @@ export class ArchitectAgent extends BaseAgent {
       : this.buildChineseFoundationPrompt(book, contextBlock, reviewFeedbackBlock);
 
     const langPrefix = resolvedLanguage === "en"
-      ? "【LANGUAGE OVERRIDE】All submitted foundation content, character names, place names, and prose must be in English.\n\n"
+      ? `【LANGUAGE OVERRIDE】All submitted foundation content, character names, place names, and prose must be in ${proseLanguage}.\n\n`
       : "";
     const userMessage = resolvedLanguage === "en"
-      ? `Generate the complete foundation for the ${book.genre} Work titled "${book.title}". Write everything in English.`
+      ? `Generate the complete foundation for the ${book.genre} Work titled "${book.title}". Write everything in ${proseLanguage}.`
       : `请为标题为"${book.title}"的${book.genre}作品生成完整基础设定。`;
 
     return this.generateFoundationInStages({
@@ -142,7 +144,7 @@ ${reviseFrom.userFeedback || "（无）"}
   async writeFoundationFiles(
     bookDir: string,
     output: ArchitectOutput,
-    language: "zh" | "en",
+    language: WritingLanguage,
     mode: "init" | "revise" = "init",
   ): Promise<void> {
     const writes: AtomicFileWrite[] = [
@@ -192,7 +194,8 @@ ${reviseFrom.userFeedback || "（无）"}
     reviewFeedback?: string,
     options?: { readonly importMode?: "continuation" | "series" },
   ): Promise<ArchitectOutput> {
-    const resolvedLanguage = book.language;
+    const resolvedLanguage = toPromptLanguage(book.language);
+    const proseLanguage = proseLanguageName(book.language);
     const reviewFeedbackBlock = this.buildReviewFeedbackBlock(reviewFeedback, resolvedLanguage);
 
     const contextBlock = externalContext
@@ -213,11 +216,11 @@ ${reviseFrom.userFeedback || "（无）"}
       reviewFeedbackBlock,
       language: resolvedLanguage,
     }) + (resolvedLanguage === "en"
-      ? `\n\n${continuationDirective}\nDerive established facts from the source package. Explicit continuation instructions control future plot and ending. Never infer a mandatory future event from tone or a mystery alone; keep unprescribed futures open. A compressed package is evidence, not permission to invent missing canon. ALL output MUST be written in English.`
+      ? `\n\n${continuationDirective}\nDerive established facts from the source package. Explicit continuation instructions control future plot and ending. Never infer a mandatory future event from tone or a mystery alone; keep unprescribed futures open. A compressed package is evidence, not permission to invent missing canon. ALL output MUST be written in ${proseLanguage}.`
       : `\n\n${continuationDirective}\n既成事实从资料包推导；未来剧情和结局服从明确的续写指令。不能仅凭文风或悬念推导必须发生的未来事件，未指定的发展保留开放。压缩资料包是证据，不是臆造缺失正典的许可。`);
 
     const userMessage = resolvedLanguage === "en"
-      ? `Generate the complete foundation for the imported ${book.genre} Work titled "${book.title}". Write everything in English.\n\n${chaptersText}`
+      ? `Generate the complete foundation for the imported ${book.genre} Work titled "${book.title}". Write everything in ${proseLanguage}.\n\n${chaptersText}`
       : `以下是《${book.title}》的已有正文资料包，请从中反向推导完整基础设定：\n\n${chaptersText}`;
 
     return this.generateFoundationInStages({
@@ -237,7 +240,8 @@ ${reviseFrom.userFeedback || "（无）"}
       readonly onOutline?: (outline: { readonly storyFrame: string; readonly volumeMap: string }) => void | Promise<void>;
     },
   ): Promise<ArchitectOutput> {
-    const resolvedLanguage = book.language;
+    const resolvedLanguage = toPromptLanguage(book.language);
+    const proseLanguage = proseLanguageName(book.language);
     const reviewFeedbackBlock = this.buildReviewFeedbackBlock(reviewFeedback, resolvedLanguage);
 
     const canonBlock = resolvedLanguage === "en"

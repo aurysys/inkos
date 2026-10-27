@@ -5,6 +5,7 @@ import {
   createWriteChaptersTool,
   executeExplicitCapabilityTool,
   type Observation,
+  resolveLengthCountingMode,
 } from "@actalk/inkos-core";
 import { loadConfig, buildPipelineConfig, findProjectRoot, resolveBookId, log, logError, resolveCliProfileSkills } from "../utils.js";
 import {
@@ -104,7 +105,7 @@ export const autoCommand = new Command("auto")
 
       if (!opts.json) {
         for (const result of results) {
-          for (const line of formatWriteNextResultLines(language, result)) log(line);
+          for (const line of formatWriteNextResultLines(language, { ...result, countingMode: resolveLengthCountingMode(book.language) })) log(line);
           log("");
         }
       }
@@ -128,6 +129,7 @@ export const autoCommand = new Command("auto")
             title: r.title,
             wordCount: r.wordCount,
             observationCount: r.observations.length,
+            countingMode: resolveLengthCountingMode(book.language),
           }))),
         }, config);
       }

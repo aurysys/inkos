@@ -2,7 +2,7 @@ import { BaseAgent } from "./base.js";
 import type { LengthSpec } from "../models/length-governance.js";
 import type { Observation } from "../models/observation.js";
 import type { ContextPackage } from "../models/input-governance.js";
-import { countChapterLength, assertChapterLength } from "../utils/length-metrics.js";
+import { countChapterLength, assertChapterLength, describeLengthUnit } from "../utils/length-metrics.js";
 import { Type } from '@sinclair/typebox';
 import { numberReviewSource } from '../models/observation.js';
 import {textRangeEditContract,textSelectionEditContract,TextEditRangeSchema} from '../utils/text-range-edits.js';
@@ -61,7 +61,7 @@ export class ReviserAgent extends BaseAgent {
     const context = renderNarrativeSelectedContext(options.contextPackage.selectedContext, options.language);
     const lengthBlock = options.lengthSpec
       ? (isEnglish
-          ? `\n## Length contract\n${JSON.stringify({...options.lengthSpec,currentCount:countChapterLength(chapterContent,options.lengthSpec.countingMode),unit:"words"})}`
+          ? `\n## Length contract\n${JSON.stringify({...options.lengthSpec,currentCount:countChapterLength(chapterContent,options.lengthSpec.countingMode),unit:describeLengthUnit(options.lengthSpec.countingMode,"en")})}`
           : `\n## 篇幅要求\n${JSON.stringify({...options.lengthSpec,currentCount:countChapterLength(chapterContent,options.lengthSpec.countingMode),unit:"正文非空白字符，含标点，不含标题"})}`)
       : "";
     const systemPrompt = buildRevisionProtocol(mode, options.language);

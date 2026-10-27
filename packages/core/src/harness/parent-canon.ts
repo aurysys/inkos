@@ -1,6 +1,7 @@
 import {readArtifactRevision} from './artifact-reader.js';
 import {loadWorkManifest} from './work-store.js';
 import type {WorkLineage} from './contracts.js';
+import { toPromptLanguage } from "../utils/writing-language.js";
 
 /** Read one captured inventory of accepted versions, never mutable working files. */
 export async function readPinnedParentCanon(projectRoot:string,targetWorkId:string,parentWorkId:string){
@@ -30,7 +31,7 @@ export async function readPinnedParentCanon(projectRoot:string,targetWorkId:stri
     const source=await readArtifactRevision({projectRoot,workId:parentWorkId,artifactId:artifact.id,revisionId:revision.id});
     return {path:revision.path,text:source.bytes.toString('utf8'),lineage:{relation:'derived-from',sourceWorkId:parentWorkId,sourceArtifactId:artifact.id,sourceRevisionId:revision.id} satisfies WorkLineage};
   }));
-  return {canon:[`# ${parent.language==='en'?'Parent canon':'正传正典'} — ${parent.title}`,...sources.filter(s=>!s.path.endsWith('/style_guide.md')).map(s=>`## ${s.path}\n\n${s.text}`)].join('\n\n'),
+  return {canon:[`# ${toPromptLanguage(parent.language)==='en'?'Parent canon':'正传正典'} — ${parent.title}`,...sources.filter(s=>!s.path.endsWith('/style_guide.md')).map(s=>`## ${s.path}\n\n${s.text}`)].join('\n\n'),
     styleGuide:sources.find(s=>s.path.endsWith('/style_guide.md'))?.text,
     lineage:[...target.lineage.filter(s=>s.sourceWorkId!==parentWorkId),...sources.map(s=>s.lineage)]};
 }

@@ -6,6 +6,7 @@ import { loadRuntimeStateSnapshot } from "../state/runtime-state-store.js";
 import { renderChapterSummariesProjection, renderCurrentStateProjection, renderHooksProjection } from "../state/state-projections.js";
 import { BookConfigSchema } from "../models/book.js";
 import { resolveDurableStoryProgress } from "../state/state-bootstrap.js";
+import { toPromptLanguage } from "../utils/writing-language.js";
 
 // Read-only view of the canonical book used as forecast input. Everything in
 // here MUST stay side-effect free: building a forecast context never creates
@@ -195,7 +196,7 @@ export function renderForecastContextMarkdown(context: ForecastContext): string 
 async function readBookConfig(bookDir: string): Promise<{ readonly title: string; readonly language: "zh" | "en" }> {
   const raw = await readFile(join(bookDir, "book.json"), "utf-8");
   const parsed = BookConfigSchema.parse(JSON.parse(raw));
-  return { title: parsed.title, language: parsed.language ?? "zh" };
+  return { title: parsed.title, language: toPromptLanguage(parsed.language) };
 }
 
 /**

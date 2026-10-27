@@ -71,6 +71,7 @@ import { opaqueConversationId, runWithAgentTrajectory } from "../llm/agent-traje
 import { guardedPiNonStreaming, guardedPiStream } from "./pi-stream.js";
 import { splitTextByEstimatedTokens } from "../llm/semantic-input.js";
 import { estimateTextTokens } from "../llm/provider.js";
+import { isWritingLanguage, toPromptLanguage, writingLanguageDirective } from "../utils/writing-language.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -358,7 +359,7 @@ function agentCacheKey(projectRoot: string, sessionId: string): string {
 
 function buildAttachmentUserBlock(attachments: ReadonlyArray<AgentSessionAttachment> | undefined, language: string): string {
   if (!attachments?.length) return "";
-  const isEn = language === "en";
+  const isEn = toPromptLanguage(language) === "en";
   const lines = [
     isEn
       ? "\n\n## Uploaded Files (host-provided, user-authorized)"
@@ -1076,7 +1077,7 @@ async function runAgentSessionUnlocked(
       beforeToolCall: preserveToolArgumentTypes,
       initialState: {
         model,
-        systemPrompt: [baseSystemPrompt, TURN_COMPLETION_GUIDANCE, restoredContextBlock, config.backgroundTaskContext]
+        systemPrompt: [baseSystemPrompt, writingLanguageDirective(work?.language), TURN_COMPLETION_GUIDANCE, restoredContextBlock, config.backgroundTaskContext]
           .filter(Boolean)
           .join("\n\n"),
         tools: [...visibleTools, createTurnCompletionTool({
@@ -1326,7 +1327,7 @@ async function runAgentSessionUnlocked(
         ? { sourceToolAssistantUuid: lastAssistantUuid }
         : {}),
       ...(role === "user" && config.attachments?.length ? { display: { userInput: {
-        text: userMessage, language: language === "en" ? "en" as const : "zh" as const,
+        text: userMessage, language: isWritingLanguage(language) ? language : "zh" as const,
         attachments: config.attachments.map(attachment => ({ filename: attachment.filename })),
       } } } : {}),
       message: persistedMessage,

@@ -22,6 +22,8 @@ import {
   formatBookCreateNextStep,
   formatBookRestoreDone,
   resolveCliLanguage,
+  resolveWritingLanguageOption,
+  resolveChapterLengthOption,
 } from "../localization.js";
 import { createBookBackup, listBookBackups, restoreBookBackup } from "../book-backup.js";
 import { loadConfig, buildPipelineConfig, findProjectRoot, resolveBookId, log, logError, resolveCliProfileSkills } from "../utils.js";
@@ -37,9 +39,9 @@ bookCommand
   .option("--genre <genre>", uiText("Genre", "장르"), "xuanhuan")
   .option("--platform <platform>", uiText("Target platform", "연재 플랫폼"), "tomato")
   .option("--target-chapters <n>", uiText("Target chapter count", "목표 챕터 수"), "200")
-  .option("--chapter-words <n>", uiText("Words per chapter", "챕터당 글자 수"), "3000")
+  .option("--chapter-words <n>", uiText("Length per chapter in the book's unit (default 3000; 5000 Korean characters incl. spaces for ko)", "챕터당 분량(책 단위 기준, 기본값 3000. ko는 공백 포함 5000자)"))
   .option("--brief <path>", uiText("Path to creative brief file (.md/.txt) — Architect builds from your ideas instead of generating from scratch", "창작 지시문 파일 경로(.md/.txt) — 처음부터 생성하지 않고 작성한 아이디어를 바탕으로 설계합니다"))
-  .option("--lang <language>", uiText("Writing language: zh (Chinese) or en (English). Defaults from genre.", "집필 언어: zh(중국어) 또는 en(영어). 지정하지 않으면 장르에 맞춰 정합니다."))
+  .option("--lang <language>", uiText("Writing language: zh (Chinese), en (English) or ko (Korean). Defaults to the project language.", "집필 언어: zh(중국어), en(영어), ko(한국어). 지정하지 않으면 프로젝트 언어를 따릅니다."))
   .option("--json", uiText("Output JSON", "JSON으로 출력합니다"))
   .action(async (opts) => {
     try {
@@ -65,6 +67,7 @@ bookCommand
 
       const config = await loadConfig();
       const now = new Date().toISOString();
+      const writingLanguage = resolveWritingLanguageOption(opts.lang, config.language);
       const book: BookConfig = {
         id: bookId,
         title: opts.title,
@@ -72,8 +75,8 @@ bookCommand
         genre: opts.genre,
         status: "outlining",
         targetChapters: parseInt(opts.targetChapters, 10),
-        chapterWordCount: parseInt(opts.chapterWords, 10),
-        language: resolveCliLanguage(opts.lang ?? config.language),
+        chapterWordCount: resolveChapterLengthOption(opts.chapterWords, writingLanguage),
+        language: writingLanguage,
         createdAt: now,
         updatedAt: now,
       };
@@ -149,7 +152,7 @@ bookCommand
   .option("--chapter-words <n>", uiText("Words per chapter", "챕터당 글자 수"))
   .option("--target-chapters <n>", uiText("Target chapter count", "목표 챕터 수"))
   .option("--status <status>", uiText("Book status (outlining/active/paused/completed)", "책 상태(outlining/active/paused/completed)"))
-  .option("--lang <language>", uiText("Writing language: zh or en", "집필 언어: zh 또는 en"))
+  .option("--lang <language>", uiText("Writing language: zh, en or ko", "집필 언어: zh, en 또는 ko"))
   .option("--json", uiText("Output JSON", "JSON으로 출력합니다"))
   .action(async (bookIdArg: string | undefined, opts) => {
     try {
@@ -162,7 +165,7 @@ bookCommand
       if (opts.chapterWords) updates.chapterWordCount = parseInt(opts.chapterWords, 10);
       if (opts.targetChapters) updates.targetChapters = parseInt(opts.targetChapters, 10);
       if (opts.status) updates.status = opts.status;
-      if (opts.lang) updates.language = opts.lang;
+      if (opts.lang) updates.language = resolveWritingLanguageOption(opts.lang, book.language);
 
       if (Object.keys(updates).length === 0) {
         if (opts.json) {

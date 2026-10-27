@@ -103,7 +103,7 @@ export type ResearchSearchConfig = z.infer<typeof ResearchSearchConfigSchema>;
 export const ProjectConfigSchema = z.object({
   name: z.string().min(1),
   version: z.literal("0.1.0"),
-  language: z.enum(["zh", "en"]).default("zh"),
+  language: z.enum(["zh", "en", "ko"]).default("zh"),
   llm: LLMConfigSchema,
   notify: z.array(NotifyChannelSchema).default([]),
   detection: DetectionConfigSchema.optional(),

@@ -63,7 +63,7 @@ export function App() {
   const { route, setRoute } = useHashRoute();
   const sse = useSSE();
   const { theme, setTheme } = useTheme();
-  const { t, lang: currentLang, uiLocale } = useI18n();
+  const { t, uiLocale, projectLanguage } = useI18n();
   const { data: project, error: projectError, refetch: refetchProject } = useApi<{ language: string; languageExplicit: boolean }>("/project");
   const [showLanguageSelector, setShowLanguageSelector] = useState(false);
   const [ready, setReady] = useState(false);
@@ -75,10 +75,10 @@ export function App() {
   // 就读到正确语言（只用 effect 的话，effect 要等本次渲染提交后才执行，本次渲染
   // 里的 tr() 会读到旧语言）。赋值是幂等的模块变量写入，StrictMode 重复渲染无影
   // 响；下面的 effect 在语言加载完成和切换时再设置一次，保证提交后的值也正确。
-  setAppLanguage(currentLang);
+  setAppLanguage(projectLanguage);
   useEffect(() => {
-    setAppLanguage(currentLang);
-  }, [currentLang]);
+    setAppLanguage(projectLanguage);
+  }, [projectLanguage]);
 
   // 服务端生成的界面文案（工具标签、错误提示）跟随本浏览器的界面语言偏好。
   useEffect(() => {

@@ -302,8 +302,8 @@ export function BookDetail({
         <div className="space-y-2">
           <div className="flex items-center gap-3">
             <h1 className="text-4xl font-serif font-medium">{book.title}</h1>
-            {book.language === "en" && (
-              <span className="px-1.5 py-0.5 rounded border border-primary/20 text-primary text-[10px] font-bold">EN</span>
+            {(book.language === "en" || book.language === "ko") && (
+              <span className="px-1.5 py-0.5 rounded border border-primary/20 text-primary text-[10px] font-bold">{book.language.toUpperCase()}</span>
             )}
           </div>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground font-medium">

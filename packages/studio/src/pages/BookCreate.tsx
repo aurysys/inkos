@@ -4,7 +4,7 @@ import { fetchJson, useApi } from "../hooks/use-api";
 import type { Theme } from "../hooks/use-theme";
 import type { TFunction } from "../hooks/use-i18n";
 import { useColors } from "../hooks/use-colors";
-import { getUiLocale, tr } from "../lib/app-language";
+import { getUiLocale, isWritingLanguage, tr, type WritingLanguage } from "../lib/app-language";
 
 interface Nav {
   toDashboard: () => void;
@@ -31,7 +31,7 @@ export interface BookCreatePayload {
   readonly title: string;
   readonly genre: string;
   readonly platform: string;
-  readonly language: "zh" | "en";
+  readonly language: WritingLanguage;
   readonly targetChapters: number;
   readonly chapterWordCount: number;
   readonly blurb: string;
@@ -67,6 +67,15 @@ const PLATFORMS_EN: ReadonlyArray<PlatformOption> = [
   { value: "kindle-unlimited", label: "Kindle Unlimited" },
   { value: "scribble-hub", label: "Scribble Hub" },
   { value: "other", label: "Other", ko: "기타" },
+];
+
+const PLATFORMS_KO: ReadonlyArray<PlatformOption> = [
+  { value: "munpia", label: "문피아" },
+  { value: "kakaopage", label: "카카오페이지" },
+  { value: "naver-series", label: "네이버 시리즈" },
+  { value: "novelpia", label: "노벨피아" },
+  { value: "ridi", label: "리디" },
+  { value: "other", label: "기타", ko: "기타" },
 ];
 
 const PAGE_COPY: Record<"zh" | "en" | "ko", PlatformCopy> = {
@@ -127,15 +136,18 @@ export function pickValidValue(current: string, available: ReadonlyArray<string>
   return current && available.includes(current) ? current : available[0] ?? "";
 }
 
-export function defaultChapterWordsForLanguage(language: "zh" | "en"): string {
+export function defaultChapterWordsForLanguage(language: WritingLanguage): string {
+  // Korean counts characters including spaces (~5000자 per web-novel chapter).
+  if (language === "ko") return "5000";
   return language === "en" ? "2000" : "3000";
 }
 
-export function platformOptionsForLanguage(language: "zh" | "en"): ReadonlyArray<PlatformOption> {
+export function platformOptionsForLanguage(language: WritingLanguage): ReadonlyArray<PlatformOption> {
+  if (language === "ko") return PLATFORMS_KO;
   return language === "en" ? PLATFORMS_EN : PLATFORMS_ZH;
 }
 
-export function defaultBookCreateForm(language: "zh" | "en"): BookCreateFormState {
+export function defaultBookCreateForm(language: WritingLanguage): BookCreateFormState {
   return {
     title: "",
     genre: "",
@@ -162,7 +174,7 @@ export function isBookCreateFormReady(form: BookCreateFormState): boolean {
   );
 }
 
-export function buildBookCreatePayload(form: BookCreateFormState, language: "zh" | "en"): BookCreatePayload {
+export function buildBookCreatePayload(form: BookCreateFormState, language: WritingLanguage): BookCreatePayload {
   const targetChapters = parsePositiveInteger(form.targetChapters);
   const chapterWordCount = parsePositiveInteger(form.chapterWordCount);
   if (!targetChapters || !chapterWordCount || !isBookCreateFormReady(form)) {
@@ -221,7 +233,7 @@ export async function waitForBookReady(bookId: string, options: WaitForBookReady
 export function BookCreate({ nav, theme, t: _t }: { nav: Nav; theme: Theme; t: TFunction }) {
   const c = useColors(theme);
   const { data: project } = useApi<{ language: string }>("/project");
-  const projectLang = project?.language === "en" ? "en" : "zh";
+  const projectLang: WritingLanguage = isWritingLanguage(project?.language) ? project.language : "zh";
   const copy = getUiLocale() === "ko" ? PAGE_COPY.ko : PAGE_COPY[projectLang];
   const platformChoices = platformOptionsForLanguage(projectLang);
   const [form, setForm] = useState<BookCreateFormState>(() => defaultBookCreateForm(projectLang));

@@ -11,7 +11,8 @@ import type { ChapterIntent, ChapterMemo, ContextPackage } from "../models/input
 import type { LengthSpec } from "../models/length-governance.js";
 import type { ChapterMeta } from "../models/chapter.js";
 import { RuntimeStateDeltaSchema, type RuntimeStateDelta } from "../models/runtime-state.js";
-import { buildLengthSpec, countChapterLength } from "../utils/length-metrics.js";
+import { buildLengthSpec, countChapterLength, describeLengthUnit } from "../utils/length-metrics.js";
+import { toPromptLanguage, type WritingLanguage } from "../utils/writing-language.js";
 import {
   buildRuntimeStateArtifacts,
   buildRuntimeStateArtifactsFromSnapshot,
@@ -109,9 +110,10 @@ export class WriterAgent extends BaseAgent {
     const bookRules = parsedBookRules.rules;
     const bookRulesBody = parsedBookRules.body;
 
-    const resolvedLanguage = book.language;
+    // Prompts/logs use the prompt language; length and chapter headings keep the writing language (ko).
+    const resolvedLanguage = toPromptLanguage(book.language);
     const targetWords = input.lengthSpec?.target ?? input.wordCountOverride ?? book.chapterWordCount;
-    const resolvedLengthSpec = input.lengthSpec ?? buildLengthSpec(targetWords, resolvedLanguage, book);
+    const resolvedLengthSpec = input.lengthSpec ?? buildLengthSpec(targetWords, book.language, book);
     if (!input.chapterIntent || !input.chapterMemo || !input.contextPackage) {
       throw new Error("Writer requires governed chapter intent, memo, and context package.");
     }
@@ -129,7 +131,7 @@ export class WriterAgent extends BaseAgent {
       contextPackage: input.contextPackage,
       externalContext: input.externalContext,
       lengthSpec: resolvedLengthSpec,
-      language: book.language,
+      language: resolvedLanguage,
     });
 
     const creativeTemperature = input.temperatureOverride ?? 0.7;
@@ -228,7 +230,7 @@ export class WriterAgent extends BaseAgent {
       book: input.book,
       bookDir: input.bookDir,
       bookRules,
-      language: resolvedLanguage,
+      language: toPromptLanguage(resolvedLanguage),
       chapterNumber: input.chapterNumber,
       title: input.title,
       content: input.content,
@@ -364,7 +366,7 @@ export class WriterAgent extends BaseAgent {
   async saveChapter(
     bookDir: string,
     output: WriteChapterOutput,
-    language: "zh" | "en" = "zh",
+    language: WritingLanguage = "zh",
     chapterIndex?: ReadonlyArray<ChapterMeta>,
   ): Promise<void> {
     const chaptersDir = join(bookDir, "chapters");
@@ -554,9 +556,10 @@ ${selectedContext || "- none"}\n`;
       ...(lengthSpec.maxChapterLength!==undefined?[`Maximum: ${lengthSpec.maxChapterLength}`]:[]),
     ];
     if (language === "en") {
+      const unit = describeLengthUnit(lengthSpec.countingMode, "en");
       return `Requirements:
-- User target length: ${lengthSpec.target} words
-- ${bounds.join("; ") || "No additional hard range specified."} (words)
+- User target length: ${lengthSpec.target} ${unit}
+- ${bounds.join("; ") || "No additional hard range specified."} (${unit})
 - Keep the scene complete; do not pad or cut mechanically`;
     }
 
@@ -628,7 +631,7 @@ ${selectedContext || "- none"}\n`;
   private async buildRuntimeStateArtifactsIfPresent(
     bookDir: string,
     delta: RuntimeStateDelta,
-    language: "zh" | "en",
+    language: WritingLanguage,
     authoritativeChapterNumber?: number,
     allowReapply?: boolean,
     baselineChapter?: number,
@@ -663,7 +666,7 @@ ${selectedContext || "- none"}\n`;
   private async resolveRuntimeStateArtifactsForOutput(
     bookDir: string,
     output: WriteChapterOutput,
-    language: "zh" | "en",
+    language: WritingLanguage,
   ): Promise<RuntimeStateArtifacts> {
     const safeDelta = this.normalizeRuntimeStateDeltaChapter(
       output.runtimeStateDelta,

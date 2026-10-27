@@ -54,6 +54,7 @@ import { hydrateActivatedSkillGuidance } from "../agent/skill-tool.js";
 import { appendActivatedSkillGuidance } from "../agents/base.js";
 
 import { readShortProductionState, writeShortProductionState, shortInputHash, type ShortProductionState } from "./short-production-state.js";
+import { toPromptLanguage } from "../utils/writing-language.js";
 
 const SHORT_FICTION_DRAFT_COMPLETION_ATTEMPTS = 3;
 const SHORT_DELIVERY_CONTRACT_CODES=new Set(["SHORT_CHAPTER_CONTRACT","SHORT_TITLE_MISMATCH","SHORT_OPENING_HOOK_CONTRACT"]);
@@ -639,7 +640,7 @@ async function reviseShortFictionWithLock(options: ShortFictionRunOptions & { re
     recovery:{action:"short-fiction__draft_short_fiction",parameters:{workId:work.id},
       reason:"The saved draft checkpoint is not an accepted manuscript. Complete and repair it through the draft stage while preserving the existing Work contract."},
   });
-  const language = work.language === "en" ? "en" : "zh";
+  const language = toPromptLanguage(work.language);
   const state=await readShortProductionState(options.projectRoot,base);
   const checkpointPath = join(".inkos", "short-revisions", `${work.id}.json`);
   const savedText = await tryReadProjectText(options.projectRoot, checkpointPath);

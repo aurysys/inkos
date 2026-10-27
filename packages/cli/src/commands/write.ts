@@ -6,6 +6,8 @@ import {
   createWriteChaptersTool,
   executeExplicitCapabilityTool,
   type Observation,
+  resolveLengthCountingMode,
+  toPromptLanguage,
 } from "@actalk/inkos-core";
 import { readdir, stat, unlink } from "node:fs/promises";
 import { join } from "node:path";
@@ -88,7 +90,7 @@ writeCommand
 
       if (!opts.json) {
         for (const result of results) {
-          for (const line of formatWriteNextResultLines(language, result)) log(line);
+          for (const line of formatWriteNextResultLines(language, { ...result, countingMode: resolveLengthCountingMode(book.language) })) log(line);
           log("");
         }
       }
@@ -112,6 +114,7 @@ writeCommand
             title: r.title,
             wordCount: r.wordCount,
             observationCount: r.observations.length,
+            countingMode: resolveLengthCountingMode(book.language),
           }))),
         }, config);
       }
@@ -274,6 +277,7 @@ writeCommand
           title: result.title,
           wordCount: result.wordCount,
           observations: result.observations,
+          countingMode: resolveLengthCountingMode(book.language),
         })) {
           log(line);
         }
@@ -336,7 +340,7 @@ writeCommand
         binding: { capabilityId: "longform", actionId: "resync_chapter_state", profileId: "longform-novel", risk: "recoverable-write" },
         tool: createResyncChapterStateTool(pipeline, bookId, {
           defaultSkills: activatedSkills,
-          language: book.language,
+          language: toPromptLanguage(book.language),
         }),
         workId: bookId,
         parameters: { bookId, chapterNumber: chapter },
@@ -359,6 +363,7 @@ writeCommand
           title: chapterMeta.title,
           wordCount: chapterMeta.wordCount,
           observations: result.observations,
+          countingMode: resolveLengthCountingMode(book.language),
         })) {
           log(line);
         }

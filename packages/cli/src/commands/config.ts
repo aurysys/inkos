@@ -100,7 +100,7 @@ configCommand
   .option("--max-tokens <n>", uiText("Max output tokens", "최대 출력 토큰"))
   .option("--thinking-budget <n>", uiText("Anthropic thinking budget", "Anthropic 사고(thinking) 예산"))
   .option("--api-format <format>", uiText("API format (chat / responses)", "API 형식(chat / responses)"))
-  .option("--lang <language>", uiText("Default writing language: zh (Chinese) or en (English)", "기본 집필 언어: zh(중국어) 또는 en(영어)"))
+  .option("--lang <language>", uiText("Default writing language: zh (Chinese), en (English) or ko (Korean)", "기본 집필 언어: zh(중국어), en(영어), ko(한국어)"))
   .action(async (opts) => {
     try {
       await mkdir(GLOBAL_CONFIG_DIR, { recursive: true });

@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { Bell, Bot, FolderUp, MessageSquare, Radar, Search, Settings2, Plus, Trash2 } from "lucide-react";
+import { Bell, Bot, FolderUp, Languages, MessageSquare, Radar, Search, Settings2, Plus, Trash2 } from "lucide-react";
 import { fetchJson, postApi, putApi, useApi } from "../hooks/use-api";
 import { usePreferencesStore } from "../store/preferences";
 import type { Theme } from "../hooks/use-theme";
 import type { TFunction } from "../hooks/use-i18n";
 import { useColors } from "../hooks/use-colors";
-import { getUiLocale, tr } from "../lib/app-language";
+import { getUiLocale, isWritingLanguage, tr, type WritingLanguage } from "../lib/app-language";
 import {
   buildDetectionConfig,
   buildNotifyChannel,
@@ -102,6 +102,8 @@ export function ProjectSettings({ nav, theme, t }: { nav: Nav; theme: Theme; t: 
   const [notifyChannels, setNotifyChannels] = useState<NotifyChannelDraft[]>([]);
   const [det, setDet] = useState<DetectionDraft>({ ...DEFAULT_DETECTION });
   const [notice, setNotice] = useState<{ tone: NoticeTone; message: string } | null>(null);
+  const { data: projectData, refetch: refetchProject } = useApi<{ language: string }>("/project");
+  const writingLanguage: WritingLanguage = isWritingLanguage(projectData?.language) ? projectData.language : "zh";
   const [saving, setSaving] = useState<string | null>(null);
   const skillFolderInputRef = useRef<HTMLInputElement>(null);
   const toolDetailsDefaultOpen = usePreferencesStore((s) => s.toolDetailsDefaultOpen);
@@ -201,6 +203,35 @@ export function ProjectSettings({ nav, theme, t }: { nav: Nav; theme: Theme; t: 
           {notice.message}
         </div>
       )}
+
+      {/* Default writing language for new Works (existing books keep their own language). */}
+      <SettingsCard
+        title={tr("默认写作语言", "Default writing language", "기본 집필 언어")}
+        description={tr(
+          "新建书籍默认使用的正文语言。已有书籍保持各自的语言。韩语书籍使用英文提示词，并要求正文以韩语写作。",
+          "Prose language for newly created books. Existing books keep their own language. Korean books run on the English prompt set with a Korean output contract.",
+          "새로 만드는 책의 본문 언어입니다. 이미 있는 책은 각자의 언어를 유지합니다. 한국어 책은 영어 지시문에 '본문은 한국어로' 지시를 붙여 씁니다.",
+        )}
+        icon={<Languages size={18} />}
+      >
+        <select
+          className={fieldClass}
+          value={writingLanguage}
+          disabled={saving === "writing-language"}
+          onChange={(event) => {
+            const next = event.target.value;
+            if (!isWritingLanguage(next) || next === writingLanguage) return;
+            void runSave("writing-language", async () => {
+              await putApi("/project", { language: next });
+              refetchProject();
+            }, tr("已保存默认写作语言。", "Default writing language saved.", "기본 집필 언어를 저장했습니다."));
+          }}
+        >
+          <option value="ko">{tr("韩语", "Korean", "한국어")}</option>
+          <option value="zh">{tr("中文", "Chinese", "중국어")}</option>
+          <option value="en">{tr("英文", "English", "영어")}</option>
+        </select>
+      </SettingsCard>
 
       {/* Chat UI preferences — applied immediately, persisted in this browser's localStorage */}
       <SettingsCard title={t("settings.chatUi")} description={t("settings.chatUiHint")} icon={<MessageSquare size={18} />}>

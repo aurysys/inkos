@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import type { WritingLanguage } from "../utils/writing-language.js";
 import { join } from "node:path";
 import {
   ChapterSummariesStateSchema,
@@ -24,7 +25,7 @@ export interface RuntimeStateArtifacts {
 
 export async function createInitialRuntimeState(input: {
   readonly bookDir: string;
-  readonly language: "zh" | "en";
+  readonly language: WritingLanguage;
   readonly hooks?: ReadonlyArray<HookRecord>;
 }): Promise<RuntimeStateSnapshot> {
   const snapshot: RuntimeStateSnapshot = {
@@ -65,7 +66,7 @@ export async function loadRuntimeStateSnapshot(bookDir: string): Promise<Runtime
 export async function loadRuntimeStateSnapshotAtChapter(params: {
   readonly bookDir: string;
   readonly chapterNumber: number;
-  readonly language: "zh" | "en";
+  readonly language: WritingLanguage;
 }): Promise<RuntimeStateSnapshot> {
   const snapshotDir = join(
     params.bookDir,
@@ -94,7 +95,7 @@ export async function loadRuntimeStateSnapshotAtChapter(params: {
 export async function buildRuntimeStateArtifacts(params: {
   readonly bookDir: string;
   readonly delta: RuntimeStateDelta;
-  readonly language: "zh" | "en";
+  readonly language: WritingLanguage;
   readonly allowReapply?: boolean;
   readonly allowNewHooks?: boolean;
 }): Promise<RuntimeStateArtifacts> {
@@ -111,7 +112,7 @@ export async function buildRuntimeStateArtifacts(params: {
 export function buildRuntimeStateArtifactsFromSnapshot(params: {
   readonly snapshot: RuntimeStateSnapshot;
   readonly delta: RuntimeStateDelta;
-  readonly language: "zh" | "en";
+  readonly language: WritingLanguage;
   readonly allowReapply?: boolean;
   readonly allowNewHooks?: boolean;
 }): RuntimeStateArtifacts {

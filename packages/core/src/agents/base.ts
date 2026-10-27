@@ -11,6 +11,7 @@ import type { Static, TSchema } from "@sinclair/typebox";
 import type { Logger } from "../utils/logger.js";
 import { SourcedReviewIndexToolSchema, ArtifactReviewIndexToolSchema } from "./review-tool.js";
 import { resolveObservationSources } from "../models/observation.js";
+import { writingLanguageDirective } from "../utils/writing-language.js";
 import {
   hydrateActivatedSkillGuidance,
   type ActivatedSkillGuidance,
@@ -120,6 +121,9 @@ export async function prepareWorkerMessages(
       try {work=await loadWorkManifest(context.projectRoot,context.bookId);}
       catch(error){if((error as NodeJS.ErrnoException).code!=='ENOENT')throw error;}
     }
+    // Korean Works run on the English prompt set; pin the prose language for every worker.
+    const languageDirective=writingLanguageDirective(work?.language);
+    if(languageDirective) messages=[{role:"system",content:languageDirective},...messages];
     const query = messages
       .filter((message) => message.role === "user")
       .map((message) => message.content)

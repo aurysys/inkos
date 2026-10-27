@@ -4,7 +4,7 @@ import type { Theme } from "../hooks/use-theme";
 import type { TFunction } from "../hooks/use-i18n";
 import { useI18n } from "../hooks/use-i18n";
 import { useColors } from "../hooks/use-colors";
-import { tr } from "../lib/app-language";
+import { isWritingLanguage, tr, type WritingLanguage } from "../lib/app-language";
 import { FileInput, BookCopy, Feather, BookMarked, Upload, Wand2 } from "lucide-react";
 import { waitForStudioBookReady } from "../lib/book-ready";
 
@@ -28,7 +28,8 @@ function fileToDataUrl(file: File): Promise<string> {
 
 export function ImportManager({ nav, theme, t, initialTab }: { nav: Nav; theme: Theme; t: TFunction; initialTab?: Tab }) {
   const c = useColors(theme);
-  const { lang } = useI18n();
+  // Default the source writing language to the project's (zh/en/ko).
+  const { projectLanguage: lang } = useI18n();
   const { data: booksData } = useApi<{ books: ReadonlyArray<BookSummary> }>("/books");
   const [tab, setTab] = useState<Tab>(initialTab ?? "chapters");
   const [status, setStatus] = useState<{ readonly tone: "info" | "success" | "error"; readonly message: string } | null>(null);
@@ -50,7 +51,7 @@ export function ImportManager({ nav, theme, t, initialTab }: { nav: Nav; theme: 
   const [ffText, setFfText] = useState("");
   const [ffMode, setFfMode] = useState("canon");
   const [ffGenre, setFfGenre] = useState("other");
-  const [ffLang, setFfLang] = useState(lang);
+  const [ffLang, setFfLang] = useState<WritingLanguage>(lang);
 
   // Spinoff (番外) state
   const [spTitle, setSpTitle] = useState("");
@@ -62,7 +63,7 @@ export function ImportManager({ nav, theme, t, initialTab }: { nav: Nav; theme: 
   const [imRef, setImRef] = useState("");
   const [imIdea, setImIdea] = useState("");
   const [imGenre, setImGenre] = useState("other");
-  const [imLang, setImLang] = useState(lang);
+  const [imLang, setImLang] = useState<WritingLanguage>(lang);
 
   useEffect(() => {
     if (initialTab) {
@@ -308,8 +309,9 @@ export function ImportManager({ nav, theme, t, initialTab }: { nav: Nav; theme: 
                 <option value="urban">{tr("都市", "Urban", "현대물")}</option>
                 <option value="xianxia">{tr("仙侠", "Xianxia", "선협")}</option>
               </select>
-              <select value={ffLang} onChange={(e) => setFfLang(e.target.value as "zh" | "en")}
+              <select value={ffLang} onChange={(e) => setFfLang(isWritingLanguage(e.target.value) ? e.target.value : "zh")}
                 className="px-3 py-2 rounded-lg bg-secondary/30 border border-border text-sm">
+                <option value="ko">{tr("韩语", "Korean", "한국어로 집필")}</option>
                 <option value="zh">{tr("中文", "Chinese", "중국어로 집필")}</option>
                 <option value="en">{tr("English", "English", "영어로 집필")}</option>
               </select>
@@ -363,8 +365,9 @@ export function ImportManager({ nav, theme, t, initialTab }: { nav: Nav; theme: 
                 <option value="urban">{tr("都市", "Urban", "현대물")}</option>
                 <option value="xianxia">{tr("仙侠", "Xianxia", "선협")}</option>
               </select>
-              <select value={imLang} onChange={(e) => setImLang(e.target.value as "zh" | "en")}
+              <select value={imLang} onChange={(e) => setImLang(isWritingLanguage(e.target.value) ? e.target.value : "zh")}
                 className="px-3 py-2 rounded-lg bg-secondary/30 border border-border text-sm">
+                <option value="ko">{tr("韩语", "Korean", "한국어로 집필")}</option>
                 <option value="zh">{tr("中文", "Chinese", "중국어로 집필")}</option>
                 <option value="en">{tr("English", "English", "영어로 집필")}</option>
               </select>

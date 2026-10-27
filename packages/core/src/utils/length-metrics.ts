@@ -1,14 +1,18 @@
 import type { LengthCountingMode, LengthSpec } from "../models/length-governance.js";
+import type { WritingLanguage } from "./writing-language.js";
 
-export type LengthLanguage = "zh" | "en";
+export type LengthLanguage = WritingLanguage;
 
 // Per-chapter length default in the book's native unit: Chinese counts characters (3000字),
 // English counts words (~2000 ≈ a 3000-char chapter). One cross-language number would mis-scale —
 // 3000 read as English words runs ~50% long, and the hard-range guard then force-expands correct chapters.
+// Korean counts characters including spaces (Korean web-novel convention, ~5000자 per chapter).
 export const DEFAULT_CHAPTER_LENGTH_ZH = 3000;
 export const DEFAULT_CHAPTER_LENGTH_EN = 2000;
+export const DEFAULT_CHAPTER_LENGTH_KO = 5000;
 
 export function defaultChapterLength(language: LengthLanguage = "zh"): number {
+  if (language === "ko") return DEFAULT_CHAPTER_LENGTH_KO;
   return language === "en" ? DEFAULT_CHAPTER_LENGTH_EN : DEFAULT_CHAPTER_LENGTH_ZH;
 }
 
@@ -23,12 +27,18 @@ export function countChapterLength(
     return words?.length ?? 0;
   }
 
+  if (countingMode === "ko_chars") {
+    // Spaces count, line breaks do not.
+    return normalized.replace(/[\r\n]+/g, "").trim().length;
+  }
+
   return normalized.replace(/\s+/g, "").length;
 }
 
 export function resolveLengthCountingMode(
   language: LengthLanguage = "zh",
 ): LengthCountingMode {
+  if (language === "ko") return "ko_chars";
   return language === "en" ? "en_words" : "zh_chars";
 }
 
@@ -36,7 +46,17 @@ export function formatLengthCount(
   count: number,
   countingMode: LengthCountingMode,
 ): string {
+  if (countingMode === "ko_chars") return `${count}자`;
   return countingMode === "en_words" ? `${count} words` : `${count}字`;
+}
+
+/** Length unit phrase for model instructions, in the prompt language. */
+export function describeLengthUnit(countingMode: LengthCountingMode, promptLanguage: "zh" | "en"): string {
+  if (countingMode === "ko_chars") {
+    return promptLanguage === "en" ? "Korean characters (spaces included)" : "个韩文字符（含空格）";
+  }
+  if (countingMode === "en_words") return promptLanguage === "en" ? "words" : "个英文单词";
+  return promptLanguage === "en" ? "Chinese characters" : "字";
 }
 
 export function buildLengthSpec(

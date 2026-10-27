@@ -4,9 +4,23 @@ export interface SplitChapter {
 }
 
 const NUMBERED_HEADING = /^#{0,6}\s*(?:第([零〇○Ｏ０一二三四五六七八九十百千万\d]+)(章|回)(?:[:：]|\s+)?\s*(.*)|Chapter\s+(\d+|[IVXLCDM]+)[.:]?\s*(.*))$/i;
+// Korean web-novel headings: "제12장 제목", "12장", "제12화", "12화 - 제목".
+const KOREAN_NUMBERED_HEADING = /^#{0,6}\s*(제\s*)?(\d+)\s*(장|화)(?:\s*[.:：\-–—]\s*|\s+|$)(.*)$/;
+
+function readKoreanChapterHeading(line: string): {number:number;title:string;language:'ko'} | undefined {
+  const match=KOREAN_NUMBERED_HEADING.exec(line);
+  if(!match)return undefined;
+  const title=(match[4]??'').trim();
+  // A bare "12장 …" can open ordinary prose ("10장 정도 되는 편지를…"); accept it only as a short title line.
+  if(!match[1]&&match[3]==='장'&&(title.length>30||/[.!?。…다요]$/.test(title)))return undefined;
+  const number=Number(match[2]);
+  return Number.isSafeInteger(number)?{number,title,language:'ko'}:undefined;
+}
 
 /** Numbered document syntax shared by persistence, export and import. */
-export function readChapterHeading(line: string): {number:number;title:string;language:'zh'|'en'} | undefined {
+export function readChapterHeading(line: string): {number:number;title:string;language:'zh'|'en'|'ko'} | undefined {
+  const korean=readKoreanChapterHeading(line.trim());
+  if(korean)return korean;
   const match=NUMBERED_HEADING.exec(line.trim());
   if(!match)return undefined;
   const ordinal=match[1]??match[4]!;
@@ -104,6 +118,10 @@ function inferFallbackTitle(headingLine: string, chapterNumber: number): string 
 
   if (/第[零一二三四五六七八九十百千万\d]+回/.test(headingLine)) {
     return `第${chapterNumber}回`;
+  }
+
+  if (/^#{0,6}\s*(?:제\s*)?\d+\s*(?:장|화)/.test(headingLine.trim())) {
+    return `제${chapterNumber}장`;
   }
 
   return `第${chapterNumber}章`;

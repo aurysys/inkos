@@ -79,7 +79,7 @@ export const MessageEventSchema = BaseEventSchema.extend({
     }).strict().optional(),
     userInput: z.object({
       text: z.string(),
-      language: z.enum(["zh", "en"]),
+      language: z.enum(["zh", "en", "ko"]),
       attachments: z.array(z.object({ filename: z.string() }).strict()),
     }).strict().optional(),
     thinking: z.string().optional(),

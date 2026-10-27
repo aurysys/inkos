@@ -33,6 +33,7 @@ import type {
 import { Type } from "@sinclair/typebox";
 import { loadRuntimeStateSnapshot } from "../state/runtime-state-store.js";
 import { recordExecutionEvidence } from "../harness/execution-evidence.js";
+import { toPromptLanguage } from "../utils/writing-language.js";
 
 export interface ComposeChapterInput {
   readonly book: BookConfig;
@@ -95,7 +96,7 @@ export async function composeGovernedChapter(input: ComposeChapterInput): Promis
   const baseContext = await collectSelectedContext(
     storyDir,
     input.plan,
-    input.book.language,
+    toPromptLanguage(input.book.language),
     input.outlineSectionSelector,
     input.memorySemanticSelector,
   );
@@ -119,7 +120,7 @@ async function persistComposedContext(
     contextPackage: initialContextPackage,
     chapterNumber: input.chapterNumber,
     goal: input.plan.intent.goal,
-    language: input.book.language,
+    language: toPromptLanguage(input.book.language),
     contextBudget: input.contextBudget,
     compiler: input.compressibleContextCompiler,
     onContextCompression: input.onContextCompression,
@@ -322,9 +323,9 @@ export class ComposerAgent extends BaseAgent {
     };
     if (contextBudget && !input.outlineSectionSelector && !input.memorySemanticSelector) {
       const reference = await loadReferenceContext(configured);
-      const complete = await this.completeContextWithinBudget(input.bookDir, input.plan, input.book.language, contextBudget, reference.entries);
+      const complete = await this.completeContextWithinBudget(input.bookDir, input.plan, toPromptLanguage(input.book.language), contextBudget, reference.entries);
       if (complete) return persistComposedContext(configured, complete, reference);
-      const selected = await collectSelectedContext(join(input.bookDir, "story"), input.plan, input.book.language,
+      const selected = await collectSelectedContext(join(input.bookDir, "story"), input.plan, toPromptLanguage(input.book.language),
         configured.outlineSectionSelector, configured.memorySemanticSelector);
       return persistComposedContext(configured, selected, reference);
     }
@@ -573,7 +574,7 @@ async function loadReferenceContext(input: ComposeChapterInput): Promise<BookRef
     goal: input.plan.intent.goal,
     outlineNode: "",
     mustKeep: [],
-    language: input.book.language,
+    language: toPromptLanguage(input.book.language),
   });
 }
 

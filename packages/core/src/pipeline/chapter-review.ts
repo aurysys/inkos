@@ -56,13 +56,14 @@ export async function reviewChapterDraft(params: {
       params.chapterNumber,
       params.book.genre,
       {
-        language: params.lengthSpec.countingMode === "en_words" ? "en" : "zh",
+        // Korean books (ko_chars) run on the English prompt set.
+        language: params.lengthSpec.countingMode === "zh_chars" ? "zh" : "en",
         contextPackage: params.controlInput.contextPackage,
         temperature: 0.3,
       },
     );
   } catch (error) {
-    const isEnglish = params.lengthSpec.countingMode === "en_words";
+    const isEnglish = params.lengthSpec.countingMode !== "zh_chars";
     modelReview = {
       unavailable: true,
       observations: [{

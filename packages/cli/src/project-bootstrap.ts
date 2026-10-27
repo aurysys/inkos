@@ -1,11 +1,11 @@
 import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import { basename, join } from "node:path";
-import { getEndpoint } from "@actalk/inkos-core";
+import { getEndpoint, type WritingLanguage } from "@actalk/inkos-core";
 import { GLOBAL_ENV_PATH } from "./utils.js";
 import { uiText } from "./ui-locale.js";
 
 export interface ProjectBootstrapOptions {
-  readonly language?: "zh" | "en";
+  readonly language?: WritingLanguage;
   readonly overwriteSupportFiles?: boolean;
 }
 
@@ -82,7 +82,7 @@ function buildDefaultLlmConfig() {
   };
 }
 
-function buildProjectConfig(projectDir: string, language: "zh" | "en") {
+function buildProjectConfig(projectDir: string, language: WritingLanguage) {
   return {
     name: basename(projectDir),
     version: "0.1.0" as const,

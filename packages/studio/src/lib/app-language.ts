@@ -2,6 +2,13 @@
 // useI18n hook，从这里读取。App.tsx 在项目配置加载/切换语言时调用 setAppLanguage 同步。
 export type AppLanguage = "zh" | "en";
 
+// 项目/书籍写作语言。ko 书籍使用英文提示词集，并额外约束正文为韩语。
+export type WritingLanguage = "zh" | "en" | "ko";
+
+export function isWritingLanguage(value: unknown): value is WritingLanguage {
+  return value === "zh" || value === "en" || value === "ko";
+}
+
 // 界面语言：与项目写作语言（AppLanguage）分离。"ko" 时界面固定为韩语，
 // 写作语言仍由项目配置决定；"follow" 时界面跟随项目写作语言（原有行为）。
 export type UiLocale = "ko" | AppLanguage;
@@ -10,6 +17,7 @@ export type UiLocalePreference = "ko" | "follow";
 const UI_LOCALE_STORAGE_KEY = "inkos.uiLocale";
 
 let current: AppLanguage = "zh";
+let projectWritingLanguage: WritingLanguage = "zh";
 let uiLocalePreference: UiLocalePreference = readStoredUiLocalePreference();
 
 function getUiLocaleStorage(): Storage | null {
@@ -36,8 +44,14 @@ function readStoredUiLocalePreference(): UiLocalePreference {
   }
 }
 
-export function setAppLanguage(lang: AppLanguage): void {
-  current = lang;
+/** Sync the project writing language; copy uses zh/en (ko projects read English copy unless the UI is Korean). */
+export function setAppLanguage(lang: WritingLanguage): void {
+  projectWritingLanguage = lang;
+  current = lang === "zh" ? "zh" : "en";
+}
+
+export function getProjectWritingLanguage(): WritingLanguage {
+  return projectWritingLanguage;
 }
 
 export function getAppLanguage(): AppLanguage {
@@ -58,7 +72,9 @@ export function setUiLocalePreference(preference: UiLocalePreference): void {
 }
 
 export function getUiLocale(): UiLocale {
-  return uiLocalePreference === "ko" ? "ko" : current;
+  // Following a Korean-writing project also means a Korean UI.
+  if (uiLocalePreference === "ko" || projectWritingLanguage === "ko") return "ko";
+  return current;
 }
 
 /**
@@ -66,8 +82,9 @@ export function getUiLocale(): UiLocale {
  * 韩语界面缺少译文时回退到英文。
  */
 export function tr(zh: string, en: string, ko?: string): string {
-  if (uiLocalePreference === "ko") return ko ?? en;
-  return current === "en" ? en : zh;
+  const locale = getUiLocale();
+  if (locale === "ko") return ko ?? en;
+  return locale === "en" ? en : zh;
 }
 
 /**

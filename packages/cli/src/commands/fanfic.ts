@@ -16,6 +16,8 @@ import {
   formatFanficCanonMissingError,
   formatFanficSourceDirEmptyError,
   resolveCliLanguage,
+  resolveWritingLanguageOption,
+  resolveChapterLengthOption,
 } from "../localization.js";
 import { uiText } from "../ui-locale.js";
 
@@ -31,8 +33,8 @@ fanficCommand
   .option("--genre <genre>", uiText("Genre", "장르"), "other")
   .option("--platform <platform>", uiText("Target platform", "연재 플랫폼"), "other")
   .option("--target-chapters <n>", uiText("Target chapter count", "목표 챕터 수"), "100")
-  .option("--chapter-words <n>", uiText("Words per chapter", "챕터당 글자 수"), "3000")
-  .option("--lang <language>", uiText("Writing language: zh or en. Defaults from the project.", "집필 언어: zh 또는 en. 지정하지 않으면 프로젝트 설정을 따릅니다."))
+  .option("--chapter-words <n>", uiText("Length per chapter in the book's unit (default 3000; 5000 Korean characters incl. spaces for ko)", "챕터당 분량(책 단위 기준, 기본값 3000. ko는 공백 포함 5000자)"))
+  .option("--lang <language>", uiText("Writing language: zh, en or ko. Defaults from the project.", "집필 언어: zh, en 또는 ko. 지정하지 않으면 프로젝트 설정을 따릅니다."))
   .option("--json", uiText("Output JSON", "JSON으로 출력합니다"))
   .action(async (opts) => {
     try {
@@ -51,6 +53,7 @@ fanficCommand
       const bookId = deriveBookIdFromTitle(opts.title) || `book-${Date.now().toString(36)}`;
 
       const now = new Date().toISOString();
+      const writingLanguage = resolveWritingLanguageOption(opts.lang, config.language);
       const book: BookConfig = {
         id: bookId,
         title: opts.title,
@@ -58,8 +61,8 @@ fanficCommand
         genre: opts.genre,
         status: "outlining",
         targetChapters: parseInt(opts.targetChapters, 10),
-        chapterWordCount: parseInt(opts.chapterWords, 10),
-        language: resolveCliLanguage(opts.lang ?? config.language),
+        chapterWordCount: resolveChapterLengthOption(opts.chapterWords, writingLanguage),
+        language: writingLanguage,
         createdAt: now,
         updatedAt: now,
         fanficMode: mode,

@@ -95,6 +95,7 @@ import { ObservationSchema, type Observation } from "../models/observation.js";
 import { StateManager } from "../state/manager.js";
 import { isActionAuthorized } from "./runtime.js";
 import { readArtifactRevision } from "./artifact-reader.js";
+import { isWritingLanguage, toPromptLanguage, type WritingLanguage } from "../utils/writing-language.js";
 
 export interface ProductionCapabilityEnvironment {
   readonly pipeline: PipelineRunner;
@@ -185,7 +186,9 @@ export function createProductionCapabilityRegistry(
   environment: ProductionCapabilityEnvironment,
 ): CapabilityRegistry {
   const registry = new CapabilityRegistry();
-  const lang = environment.language === "en" ? "en" : "zh";
+  // Writing-language default for new Works (ko stays ko); prompt-only consumers map it themselves.
+  const lang: WritingLanguage = isWritingLanguage(environment.language) ? environment.language : "zh";
+  const promptLang = toPromptLanguage(lang);
   const profile = createBuiltInWorkProfileRegistry(environment.projectRoot).require(environment.work?.profileId ?? environment.profileId);
   // The same policy governs execution and the offered confirmation action space.
   const allowedProposals = Object.entries(CONFIRMED_CAPABILITY_BINDINGS).flatMap(([intent, binding]) => {
@@ -195,7 +198,7 @@ export function createProductionCapabilityRegistry(
     return !isActionAuthorized(profile, binding, "agent", false)
       || !isActionAuthorized(profile, binding, "explicit", false) ? [action] : [];
   });
-  const proposalTool = allowedProposals.length ? createProposeActionTool(lang, {
+  const proposalTool = allowedProposals.length ? createProposeActionTool(promptLang, {
     allowedActions: allowedProposals,
     sameSession: environment.sameSessionProposal,
     proposalAction: environment.work
@@ -257,7 +260,7 @@ export function createProductionCapabilityRegistry(
         writeAction(createPatchChapterTextTool(environment.projectRoot, environment.work.id)),
         writeAction(createReplaceChapterTextTool(environment.projectRoot, environment.work.id)),
         writeAction(createResyncChapterStateTool(environment.pipeline, environment.work.id, {
-          language: lang,
+          language: promptLang,
           defaultSkills: environment.profileSkills?.("longform-novel"),
           activeSkills: environment.activeSkills,
         })),
@@ -302,7 +305,7 @@ export function createProductionCapabilityRegistry(
     confirmedAction(createShortFictionRunTool(environment.pipeline, environment.projectRoot, {
       actionPayload: environment.actionPayload,
       activeWorkId: environment.work?.id,
-      language: lang,
+      language: promptLang,
       defaultSkills: environment.profileSkills?.(environment.work?.profileId ?? "short-fiction"),
       activeSkills: environment.activeSkills,
     })),
@@ -310,7 +313,7 @@ export function createProductionCapabilityRegistry(
   registerToolCapability(registry, "script", "Script creation", [
     ...scopedProduction(createScriptCreationTool(environment.pipeline, environment.projectRoot, {
       actionPayload: environment.confirmedCreation ? environment.actionPayload : undefined,
-      language: lang,
+      language: promptLang,
       defaultSkills: environment.profileSkills?.("script"),
       activeSkills: environment.activeSkills,
     }), environment),
@@ -318,7 +321,7 @@ export function createProductionCapabilityRegistry(
   registerToolCapability(registry, "storyboard", "Storyboard creation", [
     ...scopedProduction(createStoryboardCreationTool(environment.pipeline, environment.projectRoot, {
       actionPayload: environment.confirmedCreation ? environment.actionPayload : undefined,
-      language: lang,
+      language: promptLang,
       defaultSkills: environment.profileSkills?.("storyboard"),
       activeSkills: environment.activeSkills,
     }), environment),
@@ -338,11 +341,11 @@ export function createProductionCapabilityRegistry(
             ),
           },
         ),
-        language: lang,
+        language: promptLang,
       }).map((tool) => tool.name==='inspect_story_graph' ? readAction(tool) : writeAction(tool))
     : scopedProduction(createInteractiveFilmCreationTool(environment.pipeline, environment.projectRoot, {
         actionPayload: environment.confirmedCreation ? environment.actionPayload : undefined,
-        language: lang,
+        language: promptLang,
         defaultSkills: environment.profileSkills?.("interactive-film"),
         activeSkills: environment.activeSkills,
       }), environment);
@@ -353,14 +356,14 @@ export function createProductionCapabilityRegistry(
     ? [
         readAction(createInspectPlayStateTool(environment.projectRoot, interactiveWorldId)),
         writeAction(createPlayImageTool(environment.projectRoot, interactiveWorldId)),
-        writeAction(createPlayEditTool(environment.projectRoot, interactiveWorldId, lang)),
+        writeAction(createPlayEditTool(environment.projectRoot, interactiveWorldId, promptLang)),
         writeAction(createPlayReviseTool(environment.pipeline, environment.projectRoot, interactiveWorldId, {
-          language: lang,
+          language: promptLang,
           defaultSkills: environment.profileSkills?.("interactive-world"),
           activeSkills: environment.activeSkills,
         })),
         writeAction(createPlayStepTool(environment.pipeline, environment.projectRoot, interactiveWorldId, {
-          language: lang,
+          language: promptLang,
           defaultSkills: environment.profileSkills?.("interactive-world"),
           activeSkills: environment.activeSkills,
         })),
@@ -372,7 +375,7 @@ export function createProductionCapabilityRegistry(
         environment.playMode,
         {
           actionPayload: environment.actionPayload,
-          language: lang,
+          language: promptLang,
           defaultSkills: environment.profileSkills?.("interactive-world"),
           activeSkills: environment.activeSkills,
         },
