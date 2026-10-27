@@ -27,9 +27,14 @@ describe("project bootstrap", () => {
     expect(config.name).toMatch(/^inkos-bootstrap-/);
     expect(config.version).toBe("0.1.0");
     expect(config.llm.configSource).toBe("studio");
-    expect(config.llm.service).toBe("custom");
-    expect(config.llm.model).toBe("");
-    expect(config.llm.baseUrl).toBe("");
+    // New projects default to the Codex CLI (ChatGPT login) service; its models mirror the Codex cache.
+    const { getEndpoint } = await import("@actalk/inkos-core");
+    const codexModels = getEndpoint("codex")!.models.map((model) => model.id);
+    expect(config.llm.service).toBe("codex");
+    expect(config.llm.baseUrl).toBe("https://chatgpt.com/backend-api");
+    expect(config.llm.model).toBe(codexModels[0]);
+    expect(config.llm.defaultModel).toBe(codexModels[0]);
+    expect(config.llm.services).toEqual([{ service: "codex", models: codexModels, apiFormat: "chat", stream: true }]);
     await expect(readFile(join(tempDir, ".nvmrc"), "utf-8")).resolves.toBe("22\n");
     await expect(readFile(join(tempDir, ".node-version"), "utf-8")).resolves.toBe("22\n");
   }, 20_000);

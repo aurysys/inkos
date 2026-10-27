@@ -41,8 +41,11 @@ describe("tui command", () => {
     const config = JSON.parse(await readFile(join(tempDir, "inkos.json"), "utf-8"));
     expect(config.name).toMatch(/^inkos-default-studio-/);
     expect(config.llm.configSource).toBe("studio");
-    expect(config.llm.model).toBe("");
-    expect(config.llm.baseUrl).toBe("");
+    // Auto-initialized projects default to the Codex CLI (ChatGPT login) service.
+    const { getEndpoint } = await import("@actalk/inkos-core");
+    expect(config.llm.service).toBe("codex");
+    expect(config.llm.model).toBe(getEndpoint("codex")!.models[0]?.id);
+    expect(config.llm.baseUrl).toBe("https://chatgpt.com/backend-api");
     expect(launchStudio).toHaveBeenCalledTimes(1);
     const [calledRoot, calledPort] = launchStudio.mock.calls[0] as unknown as [string, string];
     expect(realpathSync(calledRoot)).toBe(realpathSync(tempDir));

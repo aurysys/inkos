@@ -1,6 +1,8 @@
 import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import { basename, join } from "node:path";
+import { getEndpoint } from "@actalk/inkos-core";
 import { GLOBAL_ENV_PATH } from "./utils.js";
+import { uiText } from "./ui-locale.js";
 
 export interface ProjectBootstrapOptions {
   readonly language?: "zh" | "en";
@@ -59,20 +61,33 @@ export async function ensureProjectGitignore(projectDir: string): Promise<void> 
   await writeFile(path, `${existing}${separator}${missing.join("\n")}\n`, "utf-8");
 }
 
+/**
+ * New projects default to the Codex CLI service: the `codex login` ChatGPT
+ * session is reused, so no API key is needed. Same shape Studio saves for codex.
+ */
+function buildDefaultLlmConfig() {
+  const codex = getEndpoint("codex");
+  const models = codex?.models.map((model) => model.id) ?? [];
+  const model = models[0] ?? "";
+  return {
+    provider: "openai" as const,
+    service: "codex",
+    configSource: "studio" as const,
+    baseUrl: codex?.baseUrl ?? "",
+    model,
+    apiFormat: "chat" as const,
+    stream: true,
+    services: [{ service: "codex", models, apiFormat: "chat" as const, stream: true }],
+    defaultModel: model,
+  };
+}
+
 function buildProjectConfig(projectDir: string, language: "zh" | "en") {
   return {
     name: basename(projectDir),
     version: "0.1.0" as const,
     language,
-    llm: {
-      provider: "openai" as const,
-      service: "custom",
-      configSource: "studio" as const,
-      baseUrl: "",
-      model: "",
-      apiFormat: "chat" as const,
-      stream: true,
-    },
+    llm: buildDefaultLlmConfig(),
     notify: [],
     daemon: {
       schedule: {
@@ -128,7 +143,10 @@ export async function initializeProjectDirectory(
   const configPath = join(projectDir, "inkos.json");
 
   if (await exists(configPath)) {
-    throw new Error(`inkos.json already exists in ${projectDir}. Use a different directory or delete the existing project.`);
+    throw new Error(uiText(
+      `inkos.json already exists in ${projectDir}. Use a different directory or delete the existing project.`,
+      `${projectDir}에 이미 inkos.json이 있습니다. 다른 디렉터리를 사용하거나 기존 프로젝트를 삭제하세요.`,
+    ));
   }
 
   await mkdir(projectDir, { recursive: true });

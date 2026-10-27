@@ -7,31 +7,34 @@ interface ServiceQuickLink {
 }
 
 // 标签在调用时通过 tr() 解析语言，所以这里存 zh/en 对而不是最终字符串。
-const SERVICE_QUICK_LINKS: Record<string, ReadonlyArray<{ zh: string; en: string; href: string }>> = {
+const SERVICE_QUICK_LINKS: Record<string, ReadonlyArray<{ zh: string; en: string; ko?: string; href: string }>> = {
+  codex: [
+    { zh: "Codex CLI 安装说明", en: "Codex CLI install guide", ko: "Codex CLI 설치 안내", href: "https://github.com/openai/codex" },
+  ],
   kimicode: [
-    { zh: "官网", en: "Website", href: "https://www.kimi.com?aff=inkos" },
+    { zh: "官网", en: "Website", ko: "공식 사이트", href: "https://www.kimi.com?aff=inkos" },
   ],
   kimiCodingPlan: [
-    { zh: "官网", en: "Website", href: "https://www.kimi.com?aff=inkos" },
+    { zh: "官网", en: "Website", ko: "공식 사이트", href: "https://www.kimi.com?aff=inkos" },
   ],
   kkaiapi: [
-    { zh: "官网", en: "Website", href: "https://kkaiapi.com/" },
-    { zh: "API 文档", en: "API docs", href: "https://kkaiapi.com/docs" },
-    { zh: "模型/价格", en: "Models & pricing", href: "https://kkaiapi.com/models" },
+    { zh: "官网", en: "Website", ko: "공식 사이트", href: "https://kkaiapi.com/" },
+    { zh: "API 文档", en: "API docs", ko: "API 문서", href: "https://kkaiapi.com/docs" },
+    { zh: "模型/价格", en: "Models & pricing", ko: "모델·가격", href: "https://kkaiapi.com/models" },
   ],
   moonshot: [
-    { zh: "开放平台", en: "Developer platform", href: "https://platform.kimi.com?aff=inkos" },
+    { zh: "开放平台", en: "Developer platform", ko: "개발자 플랫폼", href: "https://platform.kimi.com?aff=inkos" },
   ],
   openrouter: [
-    { zh: "API Keys", en: "API Keys", href: "https://openrouter.ai/keys" },
-    { zh: "模型", en: "Models", href: "https://openrouter.ai/models" },
-    { zh: "文档", en: "Docs", href: "https://openrouter.ai/docs/api-reference/overview" },
+    { zh: "API Keys", en: "API Keys", ko: "API 키", href: "https://openrouter.ai/keys" },
+    { zh: "模型", en: "Models", ko: "모델", href: "https://openrouter.ai/models" },
+    { zh: "文档", en: "Docs", ko: "문서", href: "https://openrouter.ai/docs/api-reference/overview" },
   ],
 };
 
 export function getServiceQuickLinks(serviceId: string): ReadonlyArray<ServiceQuickLink> {
   return (SERVICE_QUICK_LINKS[serviceId] ?? []).map((link) => ({
-    label: tr(link.zh, link.en),
+    label: tr(link.zh, link.en, link.ko),
     href: link.href,
   }));
 }
@@ -57,7 +60,7 @@ export function ServiceQuickLinks({
         className,
       ].filter(Boolean).join(" ")}
     >
-      {!compact && <span className="mr-0.5">{tr("配置入口", "Quick links")}</span>}
+      {!compact && <span className="mr-0.5">{tr("配置入口", "Quick links", "바로가기")}</span>}
       {links.map((link) => (
         <a
           key={link.href}

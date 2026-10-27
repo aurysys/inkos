@@ -161,12 +161,20 @@ export const doctorCommand = new Command("doctor")
         const globalContent = await readFile(GLOBAL_ENV_PATH, "utf-8");
         hasGlobal = globalContent.includes("INKOS_LLM_API_KEY=") && !globalContent.includes("your-api-key-here");
       } catch { /* no global config */ }
+      // The global env only carries API-key settings; a Codex CLI project does not need it.
+      let usesCodex = false;
+      try {
+        const project = JSON.parse(await readFile(join(root, "inkos.json"), "utf-8")) as { llm?: { service?: unknown } };
+        usesCodex = project.llm?.service === "codex";
+      } catch { /* missing inkos.json is reported above */ }
       checks.push({
         name: uiText("Global Config", "전역 설정"),
-        ok: hasGlobal,
+        ok: hasGlobal || usesCodex,
         detail: hasGlobal
           ? uiText(`Found (${GLOBAL_ENV_PATH})`, `있음 (${GLOBAL_ENV_PATH})`)
-          : uiText("Not set. Run 'inkos config set-global'", "설정되지 않았습니다. 'inkos config set-global'을 실행하세요"),
+          : usesCodex
+            ? uiText("Not needed (project uses the Codex CLI login)", "필요 없음 (프로젝트가 Codex CLI 로그인을 사용합니다)")
+            : uiText("Not set. Run 'inkos config set-global'", "설정되지 않았습니다. 'inkos config set-global'을 실행하세요"),
       });
     }
 
@@ -191,17 +199,36 @@ export const doctorCommand = new Command("doctor")
       const provider = configResult?.llm.provider;
       const baseUrl = configResult?.llm.baseUrl;
       const apiKey = configResult?.llm.apiKey;
-      const apiKeyOptional = isApiKeyOptionalForEndpoint({ provider, baseUrl });
-      const hasKey = apiKeyOptional || (!!apiKey && apiKey.length > 10 && apiKey !== "your-api-key-here");
-      checks.push({
-        name: uiText("LLM API Key", "LLM API 키"),
-        ok: hasKey,
-        detail: apiKeyOptional
-          ? uiText("Optional for local/self-hosted endpoint", "로컬/자체 호스팅 엔드포인트에서는 선택 사항입니다")
-          : hasKey
-            ? uiText("Configured", "설정됨")
-            : uiText("Missing — save a Studio service key or set env for CLI/daemon/deploy", "없습니다 — Studio에서 서비스 키를 저장하거나 CLI/데몬/배포용 환경 변수를 설정하세요"),
-      });
+      if (configResult?.llm.service === "codex") {
+        // Codex CLI service authenticates with the `codex login` ChatGPT session instead of an API key.
+        const { readCodexAuthStatus } = await import("@actalk/inkos-core");
+        const codex = await readCodexAuthStatus();
+        checks.push({
+          name: uiText("Codex CLI Login", "Codex CLI 로그인"),
+          ok: codex.loggedIn,
+          detail: codex.loggedIn
+            ? uiText(
+              `Signed in with ChatGPT (${codex.authPath}); no API key needed`,
+              `ChatGPT로 로그인됨 (${codex.authPath}), API 키 불필요`,
+            )
+            : uiText(
+              "Not signed in — run `codex login` and choose Sign in with ChatGPT",
+              "로그인되어 있지 않습니다 — `codex login`을 실행해 ChatGPT로 로그인하세요",
+            ),
+        });
+      } else {
+        const apiKeyOptional = isApiKeyOptionalForEndpoint({ provider, baseUrl });
+        const hasKey = apiKeyOptional || (!!apiKey && apiKey.length > 10 && apiKey !== "your-api-key-here");
+        checks.push({
+          name: uiText("LLM API Key", "LLM API 키"),
+          ok: hasKey,
+          detail: apiKeyOptional
+            ? uiText("Optional for local/self-hosted endpoint", "로컬/자체 호스팅 엔드포인트에서는 선택 사항입니다")
+            : hasKey
+              ? uiText("Configured", "설정됨")
+              : uiText("Missing — save a Studio service key or set env for CLI/daemon/deploy", "없습니다 — Studio에서 서비스 키를 저장하거나 CLI/데몬/배포용 환경 변수를 설정하세요"),
+        });
+      }
     }
 
     // 5. Check books directory

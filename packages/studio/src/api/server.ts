@@ -36,6 +36,7 @@ import {
   resolveServiceModel,
   ServiceApiKeyNotFoundError,
   LLMConfigurationError,
+  readCodexAuthStatus,
   loadSecrets,
   saveSecrets,
   listModelsForService,
@@ -326,7 +327,7 @@ function compareServiceListItems(
   left: { readonly service: string },
   right: { readonly service: string },
 ): number {
-  const priority = ["kkaiapi", "openrouter", "newapi", "siliconcloud"];
+  const priority = ["codex", "kkaiapi", "openrouter", "newapi", "siliconcloud"];
   const leftPriority = priority.indexOf(left.service);
   const rightPriority = priority.indexOf(right.service);
   if (leftPriority !== -1 || rightPriority !== -1) {
@@ -2322,6 +2323,69 @@ function buildBearerAuthHeaders(apiKey: string | undefined, lang: StudioLanguage
   return { Authorization: `Bearer ${trimmed}` };
 }
 
+/**
+ * Codex CLI service: there is no API key or /models endpoint. Verify the Codex
+ * login, then send one tiny chat through the real call path.
+ */
+async function probeCodexCliService(
+  args: { readonly baseUrl: string; readonly preferredModel?: string; readonly proxyUrl?: string },
+  lang: StudioLanguage,
+): Promise<ServiceProbeResult> {
+  const status = await readCodexAuthStatus();
+  if (!status.loggedIn) {
+    return {
+      ok: false,
+      models: [],
+      error: pick(
+        lang,
+        `未检测到 Codex CLI 登录。请在终端运行 \`codex login\` 并使用 ChatGPT 登录。（${status.authPath}）`,
+        `No Codex CLI login found. Run \`codex login\` in a terminal and sign in with ChatGPT. (${status.authPath})`,
+        `Codex CLI 로그인을 찾을 수 없습니다. 터미널에서 \`codex login\`을 실행해 ChatGPT로 로그인하세요. (${status.authPath})`,
+      ),
+    };
+  }
+  const endpoint = getAllEndpoints().find((ep) => ep.id === "codex");
+  const models = (endpoint?.models ?? []).map((model) => ({ id: model.id, name: model.id }));
+  const selectedModel = args.preferredModel && models.some((model) => model.id === args.preferredModel)
+    ? args.preferredModel
+    : endpoint?.checkModel ?? models[0]?.id;
+  if (!selectedModel) {
+    return {
+      ok: false,
+      models,
+      error: pick(lang, "Codex 模型列表为空。", "The Codex model list is empty.", "Codex 모델 목록이 비어 있습니다."),
+    };
+  }
+  try {
+    const client = createLLMClient({
+      provider: "openai",
+      service: "codex",
+      configSource: "studio",
+      baseUrl: args.baseUrl,
+      apiKey: "",
+      model: selectedModel,
+      temperature: 0.7,
+      maxTokens: 16,
+      thinkingBudget: 0,
+      proxyUrl: args.proxyUrl,
+      apiFormat: "chat",
+      stream: true,
+    } as ProjectConfig["llm"]);
+    await chatCompletion(client, selectedModel, [{ role: "user", content: "hi" }], { maxTokens: 16, retry: false });
+  } catch (error) {
+    return { ok: false, models, error: error instanceof Error ? error.message : String(error) };
+  }
+  return {
+    ok: true,
+    models,
+    selectedModel,
+    apiFormat: "chat",
+    stream: true,
+    baseUrl: args.baseUrl,
+    modelsSource: "fallback",
+  };
+}
+
 async function probeServiceCapabilities(args: {
   root: string;
   service: string;
@@ -2334,6 +2398,9 @@ async function probeServiceCapabilities(args: {
   language?: StudioLanguage;
 }): Promise<ServiceProbeResult> {
   const lang = args.language ?? "zh";
+  if (args.service === "codex") {
+    return probeCodexCliService(args, lang);
+  }
   const rawConfig = await loadRawConfig(args.root).catch(() => ({} as Record<string, unknown>));
   const llm = (rawConfig.llm as Record<string, unknown> | undefined) ?? {};
   const envConfig = await readEnvConfigStatus(args.root);
@@ -3518,6 +3585,10 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
     }
 
     return c.json({ services });
+  });
+
+  app.get("/api/v1/codex/status", async (c) => {
+    return c.json(await readCodexAuthStatus());
   });
 
   app.get("/api/v1/services/config", async (c) => {
