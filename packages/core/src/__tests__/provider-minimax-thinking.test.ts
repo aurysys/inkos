@@ -26,6 +26,10 @@ vi.mock("../utils/proxy-fetch.js", () => ({
 }));
 
 vi.mock("@mariozechner/pi-ai", () => ({
+  // codex-provider registers its API wrapper when provider.ts loads.
+  registerApiProvider: vi.fn(),
+  streamOpenAICodexResponses: vi.fn(),
+  streamSimpleOpenAICodexResponses: vi.fn(),
   completeSimple: vi.fn(async () => {
     throw new Error("MiniMax OpenAI-compatible requests must use InkOS native transport");
   }),

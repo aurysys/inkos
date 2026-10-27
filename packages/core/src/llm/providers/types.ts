@@ -11,6 +11,7 @@ import type { LLMApiFormat } from "../api-format.js";
 export type ApiProtocol =
   | "openai-completions"
   | "openai-responses"
+  | "openai-codex-responses"
   | "anthropic-messages"
   | "google-generative-ai";
 

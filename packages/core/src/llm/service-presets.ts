@@ -43,6 +43,7 @@ export function resolveServicePiProvider(service: string): string | undefined {
   if (endpoint.id === "openrouter") return "openrouter";
   if (endpoint.id === "githubCopilot") return "githubCopilot";
   if (endpoint.id === "ollama") return "ollama";
+  if (endpoint.id === "codex") return "openai-codex";
   return endpoint.api === "anthropic-messages" ? "anthropic" : "openai";
 }
 
@@ -108,7 +109,9 @@ export async function listModelsForService(
   const probeBaseUrl = liveBaseUrl || endpoint.modelsBaseUrl || endpoint.baseUrl;
   const providerFamily = endpoint.api === "anthropic-messages" ? "anthropic" : "openai";
   const canProbeWithoutApiKey = isApiKeyOptionalForEndpoint({ provider: providerFamily, baseUrl: probeBaseUrl });
-  if ((apiKey || canProbeWithoutApiKey) && probeBaseUrl) {
+  // The Codex backend has no OpenAI-style /models; its catalog comes from the Codex CLI cache.
+  const hasModelsEndpoint = endpoint.api !== "openai-codex-responses";
+  if (hasModelsEndpoint && (apiKey || canProbeWithoutApiKey) && probeBaseUrl) {
     const probed = await probeModelsFromUpstream(probeBaseUrl, apiKey ?? "", 10_000);
     if (probed.length > 0) {
       const { lookupModel } = await import("./providers/lookup.js");

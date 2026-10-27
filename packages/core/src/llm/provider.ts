@@ -23,6 +23,8 @@ import {
   beginAgentModelCall,
 } from "./agent-trajectory.js";
 import type { LLMApiFormat } from "./api-format.js";
+// Side effect: routes pi-ai's openai-codex-responses API through the Codex CLI login.
+import "./codex-provider.js";
 
 
 // === Streaming Monitor Types ===
@@ -367,6 +369,7 @@ export function createLLMClient(config: LLMConfig): LLMClient {
   else if (inkosProvider?.id === "openrouter") piProvider = "openrouter";
   else if (inkosProvider?.id === "githubCopilot") piProvider = "githubCopilot";
   else if (inkosProvider?.id === "ollama") piProvider = "ollama";
+  else if (inkosProvider?.id === "codex") piProvider = "openai-codex";
   else if (inkosProvider?.api === "anthropic-messages") piProvider = "anthropic";
   else piProvider = provider;
 

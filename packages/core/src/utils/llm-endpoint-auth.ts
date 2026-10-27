@@ -13,6 +13,11 @@ export function isApiKeyOptionalForEndpoint(params: {
     const url = new URL(params.baseUrl);
     const hostname = url.hostname.toLowerCase();
 
+    // The ChatGPT Codex backend authenticates with the Codex CLI login, not an API key.
+    if (hostname === "chatgpt.com" && url.pathname.startsWith("/backend-api")) {
+      return true;
+    }
+
     return (
       hostname === "localhost"
       || hostname === "127.0.0.1"

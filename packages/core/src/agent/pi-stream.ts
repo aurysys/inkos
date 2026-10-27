@@ -62,7 +62,7 @@ export function guardedPiStream<TApi extends Api>(
         const choice = (options as SimpleStreamOptions & { toolChoice?: unknown } | undefined)?.toolChoice;
         if (choice !== undefined && configured && typeof configured === "object") {
           if (activeModel.api === "openai-completions") configured = { ...configured, tool_choice: choice };
-          if (activeModel.api === "openai-responses") {
+          if (activeModel.api === "openai-responses" || activeModel.api === "openai-codex-responses") {
             const forced = choice as { type?: string; function?: { name?: string } };
             configured = { ...configured as Record<string, unknown>, tool_choice: forced?.type === "function" && forced.function?.name
               ? { type: "function", name: forced.function.name } : choice };

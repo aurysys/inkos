@@ -389,6 +389,7 @@ export {
   type ModelInfo,
 } from "./llm/service-presets.js";
 export { resolveServiceModel, ServiceApiKeyNotFoundError, type ResolvedModel } from "./llm/service-resolver.js";
+export { CodexAuthError, readCodexAuthStatus, resolveCodexHome, type CodexAuthStatus } from "./llm/codex-auth.js";
 export { loadSecrets, saveSecrets, getServiceApiKey, type SecretsFile } from "./llm/secrets.js";
 export {
   COVER_PROVIDER_PRESETS,
