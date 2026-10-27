@@ -54,12 +54,12 @@ type Colors = ReturnType<typeof useColors>;
 
 // 标签在渲染时通过 tr() 解析语言，模块加载时不能固化成单一语言字符串，
 // 所以这里存 zh/en 对。
-const PHASE_LABELS: Record<Phase, { zh: string; en: string }> = {
-  world: { zh: "世界", en: "World" },
-  scale: { zh: "规模", en: "Scale" },
-  structure: { zh: "结构", en: "Structure" },
-  workshop: { zh: "逐节点", en: "Nodes" },
-  validate: { zh: "校验", en: "Validate" },
+const PHASE_LABELS: Record<Phase, { zh: string; en: string; ko: string }> = {
+  world: { zh: "世界", en: "World", ko: "세계" },
+  scale: { zh: "规模", en: "Scale", ko: "규모" },
+  structure: { zh: "结构", en: "Structure", ko: "구조" },
+  workshop: { zh: "逐节点", en: "Nodes", ko: "노드별 작업" },
+  validate: { zh: "校验", en: "Validate", ko: "검증" },
 };
 
 
@@ -71,19 +71,19 @@ const DEFAULT_SUBVIEW: Record<Phase, string> = {
   validate: "validate",
 };
 
-const PHASE_SUBVIEWS: Record<Phase, ReadonlyArray<{ key: string; zh: string; en: string }>> = {
+const PHASE_SUBVIEWS: Record<Phase, ReadonlyArray<{ key: string; zh: string; en: string; ko: string }>> = {
   world: [
-    { key: "chat", zh: "对话", en: "Chat" },
-    { key: "anchor", zh: "世界锚点", en: "World anchor" },
+    { key: "chat", zh: "对话", en: "Chat", ko: "대화" },
+    { key: "anchor", zh: "世界锚点", en: "World anchor", ko: "세계 앵커" },
   ],
   scale: [],
   structure: [
-    { key: "flow", zh: "流程图", en: "Flow" },
-    { key: "tree", zh: "树", en: "Tree" },
+    { key: "flow", zh: "流程图", en: "Flow", ko: "흐름도" },
+    { key: "tree", zh: "树", en: "Tree", ko: "트리" },
   ],
   workshop: [
-    { key: "tree", zh: "树", en: "Tree" },
-    { key: "chat", zh: "对话", en: "Chat" },
+    { key: "tree", zh: "树", en: "Tree", ko: "트리" },
+    { key: "chat", zh: "对话", en: "Chat", ko: "대화" },
   ],
   validate: [],
 };
@@ -121,6 +121,7 @@ function WorldAnchorView({
         {tr(
           "暂无世界锚点。请先切换到「对话」，请 AI 帮您设定世界观和角色。",
           "No world anchor yet. Switch to “Chat” and ask the AI to set up the world and characters.",
+          "아직 세계 앵커가 없습니다. 「대화」로 전환한 뒤 AI에게 세계관과 등장인물 설정을 요청하세요.",
         )}
       </div>
     );
@@ -130,34 +131,34 @@ function WorldAnchorView({
   return (
     <div className="p-4 space-y-3 text-sm" data-testid="film-world">
       <div>
-        <div className={`text-xs font-medium mb-1 ${c.muted}`}>{tr("故事核心", "Story core")}</div>
+        <div className={`text-xs font-medium mb-1 ${c.muted}`}>{tr("故事核心", "Story core", "이야기 핵심")}</div>
         <div className="text-foreground">{worldAnchor.storyCore || "—"}</div>
       </div>
       <div className="flex gap-6">
         <div>
-          <div className={`text-xs font-medium mb-1 ${c.muted}`}>{tr("主题", "Theme")}</div>
+          <div className={`text-xs font-medium mb-1 ${c.muted}`}>{tr("主题", "Theme", "주제")}</div>
           <div>{worldAnchor.theme || "—"}</div>
         </div>
         <div>
-          <div className={`text-xs font-medium mb-1 ${c.muted}`}>{tr("题材", "Genre")}</div>
+          <div className={`text-xs font-medium mb-1 ${c.muted}`}>{tr("题材", "Genre", "장르")}</div>
           <div>{worldAnchor.genre || "—"}</div>
         </div>
         {worldAnchor.durationMinutes > 0 && (
           <div>
-            <div className={`text-xs font-medium mb-1 ${c.muted}`}>{tr("时长", "Duration")}</div>
-            <div>{worldAnchor.durationMinutes} {tr("分钟", "min")}</div>
+            <div className={`text-xs font-medium mb-1 ${c.muted}`}>{tr("时长", "Duration", "길이")}</div>
+            <div>{worldAnchor.durationMinutes} {tr("分钟", "min", "분")}</div>
           </div>
         )}
       </div>
       {worldAnchor.worldRules && (
         <div>
-          <div className={`text-xs font-medium mb-1 ${c.muted}`}>{tr("世界规则", "World rules")}</div>
+          <div className={`text-xs font-medium mb-1 ${c.muted}`}>{tr("世界规则", "World rules", "세계 규칙")}</div>
           <div className="whitespace-pre-wrap">{worldAnchor.worldRules}</div>
         </div>
       )}
       {graph.characters.length > 0 && (
         <div>
-          <div className={`text-xs font-medium mb-2 ${c.muted}`}>{tr("主要角色", "Main characters")}</div>
+          <div className={`text-xs font-medium mb-2 ${c.muted}`}>{tr("主要角色", "Main characters", "주요 등장인물")}</div>
           <ul className="space-y-2">
             {graph.characters.map((ch) => (
               <li key={ch.id} className="flex items-start gap-2">
@@ -185,6 +186,7 @@ function ScalePlaceholderView({ c }: { c: Colors }) {
       {tr(
         "规模配置（P2 功能）— 在此设定节点数量目标、分支深度、多结局数量等参数。",
         "Scale settings (P2) — set node count targets, branch depth, number of endings, and other parameters here.",
+        "규모 설정(P2 기능) — 여기에서 목표 노드 수, 분기 깊이, 엔딩 수 등의 값을 설정합니다.",
       )}
     </div>
   );
@@ -259,7 +261,7 @@ export default function FilmWizard({
             onClick={nav.toDashboard}
             className={c.link}
           >
-            ← {tr("互动影游", "Interactive films")}
+            ← {tr("互动影游", "Interactive films", "인터랙티브 필름")}
           </button>
           <div className="flex items-center gap-1 flex-wrap">
           {WIZARD_PHASES.map((p, i) => {
@@ -291,7 +293,7 @@ export default function FilmWizard({
                 >
                   {i + 1}
                 </span>
-                <span>{tr(PHASE_LABELS[p].zh, PHASE_LABELS[p].en)}</span>
+                <span>{tr(PHASE_LABELS[p].zh, PHASE_LABELS[p].en, PHASE_LABELS[p].ko)}</span>
               </button>
             );
           })}
@@ -307,7 +309,7 @@ export default function FilmWizard({
             showPreview ? c.btnPrimary : c.btnSecondary,
           ].join(" ")}
         >
-          {tr("试玩", "Play")}
+          {tr("试玩", "Play", "플레이")}
         </button>
       </div>
 
@@ -325,7 +327,7 @@ export default function FilmWizard({
                 currentSubView === sv.key ? c.btnPrimary : c.btnSecondary,
               ].join(" ")}
             >
-              {tr(sv.zh, sv.en)}
+              {tr(sv.zh, sv.en, sv.ko)}
             </button>
           ))}
         </div>

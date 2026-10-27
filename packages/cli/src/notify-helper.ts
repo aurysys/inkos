@@ -1,5 +1,6 @@
 import { dispatchNotification, type ProjectConfig } from "@actalk/inkos-core";
 import { loadConfig, logError } from "./utils.js";
+import { uiText } from "./ui-locale.js";
 
 export interface CliNotifyMessage {
   readonly title: string;
@@ -24,11 +25,14 @@ export async function sendCommandNotification(
     const resolved = config ?? (await loadConfig());
     const channels = resolved.notify ?? [];
     if (channels.length === 0) {
-      logError("--notify: no notify channels configured in project config (notify: []), skipping notification");
+      logError(uiText(
+        "--notify: no notify channels configured in project config (notify: []), skipping notification",
+        "--notify: 프로젝트 설정에 알림 채널이 없어(notify: []) 알림을 건너뜁니다",
+      ));
       return;
     }
     await dispatchNotification(channels, message);
   } catch (e) {
-    logError(`--notify: failed to send notification: ${e}`);
+    logError(uiText(`--notify: failed to send notification: ${e}`, `--notify: 알림을 보내지 못했습니다: ${e}`));
   }
 }

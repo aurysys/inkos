@@ -7,9 +7,9 @@ import { tr } from "../../lib/app-language";
 import { roleFromPath, type RoleRef } from "../../lib/truth-display";
 
 // label 在渲染时经 tr() 取当前语言，不能在模块加载时就固定成一种语言。
-const TIER_BADGE: Record<RoleRef["tier"], { zh: string; en: string; color: string }> = {
-  major: { zh: "主要", en: "Major", color: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
-  minor: { zh: "次要", en: "Minor", color: "bg-blue-500/15 text-blue-600 dark:text-blue-400" },
+const TIER_BADGE: Record<RoleRef["tier"], { zh: string; en: string; ko: string; color: string }> = {
+  major: { zh: "主要", en: "Major", ko: "주요", color: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
+  minor: { zh: "次要", en: "Minor", ko: "보조", color: "bg-blue-500/15 text-blue-600 dark:text-blue-400" },
 };
 
 function RoleEntry({ role }: { readonly role: RoleRef }) {
@@ -25,7 +25,7 @@ function RoleEntry({ role }: { readonly role: RoleRef }) {
         {role.name}
       </span>
       <span className={`text-[12px] px-1.5 py-0.5 rounded-full shrink-0 ${badge.color}`}>
-        {tr(badge.zh, badge.en)}
+        {tr(badge.zh, badge.en, badge.ko)}
       </span>
     </button>
   );
@@ -69,7 +69,7 @@ export function CharacterSection({ bookId }: CharacterSectionProps) {
   if (roles.length === 0) return null;
 
   return (
-    <SidebarCard title={tr("角色", "Characters")}>
+    <SidebarCard title={tr("角色", "Characters", "등장인물")}>
       <div className="space-y-1.5">
         {roles.map((role) => <RoleEntry key={role.path} role={role} />)}
       </div>

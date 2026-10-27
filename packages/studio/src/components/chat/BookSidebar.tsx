@@ -4,6 +4,7 @@ import type { TFunction } from "../../hooks/use-i18n";
 import type { SSEMessage } from "../../hooks/use-sse";
 import { useChatStore } from "../../store/chat";
 import { fetchJson } from "../../hooks/use-api";
+import { tr } from "../../lib/app-language";
 import { PanelRightClose, PanelRightOpen, ArrowLeft, Loader2, Pencil, Save, X } from "lucide-react";
 import { Streamdown } from "streamdown";
 import { cjk } from "@streamdown/cjk";
@@ -49,7 +50,11 @@ function renderTruthBody(
     const { isEmpty, body: stateBody } = presentCurrentState(content);
     return isEmpty ? (
       <p className="text-[14px] leading-6 text-muted-foreground/60 italic">
-        还没有运行状态。开始写作后，每写完一章这里会自动记录最新的故事进展。
+        {tr(
+          "还没有运行状态。开始写作后，每写完一章这里会自动记录最新的故事进展。",
+          "No runtime state yet. Once you start writing, the latest story progress is recorded here after each chapter.",
+          "아직 진행 상태가 없습니다. 집필을 시작하면 챕터를 마칠 때마다 최신 이야기 진행 상황이 이곳에 자동으로 기록됩니다.",
+        )}
       </p>
     ) : (
       <Streamdown plugins={streamdownPlugins} mode="static">{stateBody}</Streamdown>
@@ -70,7 +75,7 @@ function ArtifactView({ bookId }: { readonly bookId: string }) {
 
   const isChapter = artifactChapter !== null;
   const label = isChapter
-    ? `第 ${artifactChapter} 章`
+    ? tr(`第 ${artifactChapter} 章`, `Chapter ${artifactChapter}`, `${artifactChapter}장`)
     : artifactFile ? artifactLabel(artifactFile) : "";
 
   useEffect(() => {
@@ -165,7 +170,7 @@ function ArtifactView({ bookId }: { readonly bookId: string }) {
             <Loader2 size={16} className="text-muted-foreground animate-spin" />
           </div>
         ) : content === null ? (
-          <p className="text-[14px] leading-6 text-muted-foreground/50 italic px-4 py-3">文件不存在</p>
+          <p className="text-[14px] leading-6 text-muted-foreground/50 italic px-4 py-3">{tr("文件不存在", "File not found", "파일이 없습니다")}</p>
         ) : editing ? (
           <textarea
             value={editContent}
@@ -204,9 +209,9 @@ function PanelView({ bookId, theme: _theme, t, sse }: BookSidebarProps) {
   }, [sse.messages]);
 
   const OP_LABELS: Record<string, string> = {
-    write: isZh ? "正在写作中..." : "Writing...",
-    audit: isZh ? "正在审计中..." : "Auditing...",
-    revise: isZh ? "正在修订中..." : "Revising...",
+    write: tr("正在写作中...", "Writing...", "작성 중..."),
+    audit: tr("正在审计中...", "Auditing...", "검토 중..."),
+    revise: tr("正在修订中...", "Revising...", "수정 중..."),
   };
 
   return (
@@ -300,7 +305,7 @@ export function BookSidebarToggle({ bookId, theme, t, sse }: BookSidebarProps) {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-3 py-2 border-b border-border/20">
-              <span className="text-[15px] leading-6 font-medium text-muted-foreground">书籍信息</span>
+              <span className="text-[15px] leading-6 font-medium text-muted-foreground">{tr("书籍信息", "Book info", "책 정보")}</span>
               <button onClick={() => setOpen(false)} className="text-muted-foreground hover:text-foreground">
                 <PanelRightClose size={14} />
               </button>

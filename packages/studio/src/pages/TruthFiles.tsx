@@ -4,6 +4,7 @@ import type { Theme } from "../hooks/use-theme";
 import type { TFunction } from "../hooks/use-i18n";
 import { useColors } from "../hooks/use-colors";
 import { Pencil, Save, X } from "lucide-react";
+import { tr } from "../lib/app-language";
 
 interface TruthFile {
   readonly name: string;
@@ -72,7 +73,7 @@ export function TruthFiles({ bookId, nav, theme, t }: { bookId: string; nav: Nav
       setEditMode(false);
       refetchFile();
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Failed to save");
+      alert(e instanceof Error ? e.message : tr("保存失败", "Failed to save", "저장하지 못했습니다"));
     } finally {
       setSavingEdit(false);
     }
@@ -121,9 +122,13 @@ export function TruthFiles({ bookId, nav, theme, t }: { bookId: string; nav: Nav
                   data-testid="runtime-diagnostic-warning"
                   className="mb-3 px-3 py-2 rounded-md border border-blue-500/30 bg-blue-500/10 text-blue-700 dark:text-blue-300 text-xs leading-relaxed"
                 >
-                  <div className="font-medium">运行时诊断文件 / Runtime diagnostic</div>
+                  <div className="font-medium">{tr("运行时诊断文件", "Runtime diagnostic", "런타임 진단 파일")}</div>
                   <div className="mt-1">
-                    这里展示本章写作时的上下文选择、保护层、可压缩层和预算 trace。它只用于追溯系统看了什么，不作为可编辑设定。
+                    {tr(
+                      "这里展示本章写作时的上下文选择、保护层、可压缩层和预算 trace。它只用于追溯系统看了什么，不作为可编辑设定。",
+                      "Shows the context selection, protected layers, compressible layers, and budget trace used when this chapter was written. It only traces what the system looked at and is not an editable setting.",
+                      "이 챕터를 쓸 때 선택한 컨텍스트, 보호 계층, 압축 가능 계층, 예산 trace를 보여 줍니다. 시스템이 무엇을 참고했는지 추적하는 용도이며 편집할 수 있는 설정이 아닙니다.",
+                    )}
                   </div>
                 </div>
               )}
@@ -135,7 +140,7 @@ export function TruthFiles({ bookId, nav, theme, t }: { bookId: string; nav: Nav
                       className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-md ${c.btnSecondary}`}
                     >
                       <X size={14} />
-                      Cancel
+                      {tr("取消", "Cancel", "취소")}
                     </button>
                     <button
                       onClick={handleSaveEdit}
@@ -153,7 +158,7 @@ export function TruthFiles({ bookId, nav, theme, t }: { bookId: string; nav: Nav
                       className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-md ${c.btnSecondary}`}
                     >
                       <Pencil size={14} />
-                      Edit
+                      {tr("编辑", "Edit", "편집")}
                     </button>
                   )
                 )}

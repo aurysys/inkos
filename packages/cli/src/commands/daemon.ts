@@ -4,12 +4,13 @@ import { loadConfig, findProjectRoot, buildPipelineConfig, log, logError } from 
 import { createWriteStream, type WriteStream } from "node:fs";
 import { writeFile, readFile, unlink } from "node:fs/promises";
 import { join } from "node:path";
+import { uiText } from "../ui-locale.js";
 
 const PID_FILE = "inkos.pid";
 
 export const upCommand = new Command("up")
-  .description("Start the InkOS daemon (autonomous mode)")
-  .option("-q, --quiet", "Suppress console output")
+  .description(uiText("Start the InkOS daemon (autonomous mode)", "InkOS 데몬을 시작합니다(자율 모드)"))
+  .option("-q, --quiet", uiText("Suppress console output", "콘솔 출력을 숨깁니다"))
   .action(async (opts) => {
     let logStream: WriteStream | undefined;
     let pidPath: string | undefined;
@@ -21,16 +22,19 @@ export const upCommand = new Command("up")
       pidPath = join(root, PID_FILE);
       try {
         const existingPid = await readFile(pidPath, "utf-8");
-        logError(`Daemon already running (PID: ${existingPid.trim()}). Run 'inkos down' first.`);
+        logError(uiText(
+          `Daemon already running (PID: ${existingPid.trim()}). Run 'inkos down' first.`,
+          `데몬이 이미 실행 중입니다(PID: ${existingPid.trim()}). 먼저 'inkos down'을 실행하세요.`,
+        ));
         process.exit(1);
       } catch {
         // No PID file, good
       }
 
-      log("Starting InkOS daemon...");
-      log(`  Write cycle: ${config.daemon.schedule.writeCron}`);
-      log(`  Radar scan: ${config.daemon.schedule.radarCron}`);
-      log(`  Max concurrent books: ${config.daemon.maxConcurrentBooks}`);
+      log(uiText("Starting InkOS daemon...", "InkOS 데몬을 시작하는 중..."));
+      log(uiText(`  Write cycle: ${config.daemon.schedule.writeCron}`, `  집필 주기: ${config.daemon.schedule.writeCron}`));
+      log(uiText(`  Radar scan: ${config.daemon.schedule.radarCron}`, `  레이더 스캔: ${config.daemon.schedule.radarCron}`));
+      log(uiText(`  Max concurrent books: ${config.daemon.maxConcurrentBooks}`, `  동시 처리 최대 책 수: ${config.daemon.maxConcurrentBooks}`));
       log("");
 
       // Write PID file
@@ -50,7 +54,7 @@ export const upCommand = new Command("up")
         cooldownAfterChapterMs: config.daemon.cooldownAfterChapterMs,
         maxChaptersPerDay: config.daemon.maxChaptersPerDay,
         onChapterComplete: (bookId, chapter) => {
-          log(`  [+] ${bookId} Ch.${chapter}`);
+          log(uiText(`  [+] ${bookId} Ch.${chapter}`, `  [+] ${bookId} ${chapter}장`));
         },
         onError: (bookId, error) => {
           logError(`${bookId}: ${error.message}`);
@@ -59,7 +63,7 @@ export const upCommand = new Command("up")
 
       // Handle shutdown
       const shutdown = async () => {
-        log("\nShutting down daemon...");
+        log(uiText("\nShutting down daemon...", "\n데몬을 종료하는 중..."));
         scheduler.stop();
         logStream?.end();
         const currentPidPath = pidPath;
@@ -77,7 +81,7 @@ export const upCommand = new Command("up")
       process.on("SIGTERM", shutdown);
 
       await scheduler.start();
-      log("Daemon running. Press Ctrl+C to stop.");
+      log(uiText("Daemon running. Press Ctrl+C to stop.", "데몬이 실행 중입니다. 멈추려면 Ctrl+C를 누르세요."));
 
       // Keep process alive
       await new Promise(() => {});
@@ -90,13 +94,13 @@ export const upCommand = new Command("up")
           // ignore
         }
       }
-      logError(`Failed to start daemon: ${e}`);
+      logError(uiText(`Failed to start daemon: ${e}`, `데몬을 시작하지 못했습니다: ${e}`));
       process.exit(1);
     }
   });
 
 export const downCommand = new Command("down")
-  .description("Stop the InkOS daemon")
+  .description(uiText("Stop the InkOS daemon", "InkOS 데몬을 멈춥니다"))
   .action(async () => {
     const root = findProjectRoot();
     const pidPath = join(root, PID_FILE);
@@ -105,12 +109,12 @@ export const downCommand = new Command("down")
       const pid = (await readFile(pidPath, "utf-8")).trim();
       try {
         process.kill(parseInt(pid, 10), "SIGTERM");
-        log(`Daemon (PID: ${pid}) stopped.`);
+        log(uiText(`Daemon (PID: ${pid}) stopped.`, `데몬(PID: ${pid})을 멈췄습니다.`));
       } catch {
-        log(`Daemon (PID: ${pid}) not found. Cleaning up.`);
+        log(uiText(`Daemon (PID: ${pid}) not found. Cleaning up.`, `데몬(PID: ${pid})을 찾을 수 없습니다. 남은 파일을 정리합니다.`));
       }
       try { await unlink(pidPath); } catch { /* already cleaned up by daemon */ }
     } catch {
-      log("No daemon running.");
+      log(uiText("No daemon running.", "실행 중인 데몬이 없습니다."));
     }
   });

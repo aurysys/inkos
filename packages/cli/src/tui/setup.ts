@@ -75,6 +75,37 @@ export interface InteractiveSetupCopy {
 }
 
 export function buildInteractiveSetupCopy(locale: TuiLocale): InteractiveSetupCopy {
+  if (locale === "ko") {
+    return {
+      title: "모델 설정",
+      subtitle: "모델 서비스를 설정하면 바로 집필을 시작할 수 있습니다.",
+      steps: {
+        provider: "서비스",
+        baseUrl: "Base URL",
+        apiKey: "API 키",
+        model: "모델",
+        scope: "저장 범위",
+      },
+      hints: {
+        provider: "openai / anthropic / kkaiapi / custom(OpenAI 호환 프록시)",
+        baseUrl: "사용할 API 엔드포인트 주소",
+        apiKey: "선택한 서비스의 API 키를 붙여 넣으세요.",
+        model: "예: gpt-4o, claude-sonnet-4-20250514, deepseek-chat",
+        scope: "global = 모든 프로젝트, project = 현재 디렉터리만",
+      },
+      defaults: {
+        provider: "openai",
+        baseUrl: "(기본값)",
+        scope: "[global]",
+      },
+      scopeChoices: {
+        global: "모든 프로젝트",
+        project: "현재 디렉터리",
+      },
+      savedTo: "저장 위치:",
+    };
+  }
+
   if (locale === "en") {
     return {
       title: "LLM Setup",
@@ -141,6 +172,15 @@ export function buildAutoInitMessages(projectName: string, locale: TuiLocale): {
   readonly initialized: string;
   readonly envTemplateHeader: string;
 } {
+  if (locale === "ko") {
+    return {
+      initializing: `${projectName}/ 에서 프로젝트를 초기화하는 중...`,
+      initialized: "프로젝트를 초기화했습니다",
+      // Written into the generated .env file, so it stays in English.
+      envTemplateHeader: "# LLM Configuration — run inkos tui to configure interactively",
+    };
+  }
+
   if (locale === "en") {
     return {
       initializing: `Initializing project in ${projectName}/ ...`,

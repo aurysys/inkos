@@ -13,35 +13,35 @@ import { summarizeToolResult, toolResultDisplayText } from "../../../../shared/t
 
 const NULL_BOOK_KEY = "__null__";
 
-// [zh, en] tuples resolved through tr() at call time so labels follow the
+// [zh, en, ko] tuples resolved through tr() at call time so labels follow the
 // current app language instead of the language active at module load.
-const TOOL_LABELS: Record<string, readonly [string, string]> = {
-  read: ["读取文件", "Read file"],
-  edit: ["编辑文件", "Edit file"],
-  grep: ["搜索", "Search"],
-  ls: ["列目录", "List directory"],
-  context_compression: ["整理上下文", "Organize context"],
-  propose_action: ["确认动作", "Confirm action"],
-  short_fiction_run: ["短篇生产", "Short fiction run"],
-  generate_cover: ["生成封面", "Generate cover"],
-  script_create: ["剧本创作", "Create script"],
-  storyboard_create: ["分镜创作", "Create storyboard"],
-  interactive_film_create: ["互动影游", "Interactive film"],
-  play_edit: ["编辑互动世界", "Edit interactive world"],
-  play_start: ["启动互动世界", "Start interactive world"],
-  play_revise: ["重做互动回合", "Redo play turn"],
-  play_step: ["推进互动世界", "Advance interactive world"],
-  create_book: ["创建长篇", "Create long-form Work"],
-  create_work: ["创建作品", "Create Work"],
-  export_work: ["导出作品", "Export Work"],
-  review_and_export_work_artifact: ["审稿并导出", "Review and export"],
-  review_work_artifact: ["审稿", "Review artifact"],
-  revise_work_artifact: ["修订作品", "Revise artifact"],
-  revise_foundation: ["重建设定", "Revise foundation"],
-  write_chapters: ["写作章节", "Write chapters"],
-  review_chapter: ["审查章节", "Review chapter"],
-  revise_chapter: ["修订章节", "Revise chapter"],
-  export_book: ["导出作品", "Export Work"],
+const TOOL_LABELS: Record<string, readonly [string, string, string]> = {
+  read: ["读取文件", "Read file", "파일 읽기"],
+  edit: ["编辑文件", "Edit file", "파일 편집"],
+  grep: ["搜索", "Search", "검색"],
+  ls: ["列目录", "List directory", "디렉터리 목록"],
+  context_compression: ["整理上下文", "Organize context", "맥락 정리"],
+  propose_action: ["确认动作", "Confirm action", "작업 확인"],
+  short_fiction_run: ["短篇生产", "Short fiction run", "단편 제작"],
+  generate_cover: ["生成封面", "Generate cover", "표지 생성"],
+  script_create: ["剧本创作", "Create script", "대본 작성"],
+  storyboard_create: ["分镜创作", "Create storyboard", "스토리보드 작성"],
+  interactive_film_create: ["互动影游", "Interactive film", "인터랙티브 필름"],
+  play_edit: ["编辑互动世界", "Edit interactive world", "인터랙티브 월드 편집"],
+  play_start: ["启动互动世界", "Start interactive world", "인터랙티브 월드 시작"],
+  play_revise: ["重做互动回合", "Redo play turn", "인터랙티브 턴 다시 진행"],
+  play_step: ["推进互动世界", "Advance interactive world", "인터랙티브 월드 진행"],
+  create_book: ["创建长篇", "Create long-form Work", "장편 만들기"],
+  create_work: ["创建作品", "Create Work", "작품 만들기"],
+  export_work: ["导出作品", "Export Work", "작품 내보내기"],
+  review_and_export_work_artifact: ["审稿并导出", "Review and export", "검토 후 내보내기"],
+  review_work_artifact: ["审稿", "Review artifact", "원고 검토"],
+  revise_work_artifact: ["修订作品", "Revise artifact", "작품 수정"],
+  revise_foundation: ["重建设定", "Revise foundation", "기본 설정 재구성"],
+  write_chapters: ["写作章节", "Write chapters", "챕터 쓰기"],
+  review_chapter: ["审查章节", "Review chapter", "챕터 검토"],
+  revise_chapter: ["修订章节", "Revise chapter", "챕터 수정"],
+  export_book: ["导出作品", "Export Work", "작품 내보내기"],
 };
 
 export function bookKey(bookId: string | null | undefined): string {
@@ -56,7 +56,7 @@ export function extractErrorMessage(error: string | { code?: string; message?: s
 export function resolveToolLabel(tool: string, _agent?: string): string {
   tool = actionToolName(tool);
   const label = TOOL_LABELS[tool];
-  return label ? tr(label[0], label[1]) : tool;
+  return label ? tr(label[0], label[1], label[2]) : tool;
 }
 
 function actionToolName(tool: string): string {

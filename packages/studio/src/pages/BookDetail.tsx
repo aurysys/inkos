@@ -6,6 +6,7 @@ import type { SSEMessage } from "../hooks/use-sse";
 import { useColors } from "../hooks/use-colors";
 import { deriveBookActivity, shouldRefetchBookView } from "../hooks/use-book-activity";
 import { ConfirmDialog } from "../components/ConfirmDialog";
+import { tr } from "../lib/app-language";
 import {
   ChevronLeft,
   Zap,
@@ -113,7 +114,7 @@ export function BookDetail({
       await postApi(`/books/${bookId}/write-next`);
     } catch (e) {
       setWriteRequestPending(false);
-      alert(e instanceof Error ? e.message : "Failed");
+      alert(e instanceof Error ? e.message : tr("操作失败", "Failed", "실패했습니다"));
     }
   };
 
@@ -128,7 +129,7 @@ export function BookDetail({
       }
       nav.toDashboard();
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Delete failed");
+      alert(e instanceof Error ? e.message : tr("删除失败", "Delete failed", "삭제하지 못했습니다"));
     } finally {
       setDeleting(false);
     }
@@ -136,9 +137,11 @@ export function BookDetail({
 
   const handleRewrite = async (chapterNum: number) => {
     const brief = window.prompt(
-      data?.book.language === "en"
-        ? "Optional rewrite brief for this run only. Leave blank to use existing focus."
-        : "可选：输入这次重写要遵循的补充想法。留空则沿用现有 focus。",
+      tr(
+        "可选：输入这次重写要遵循的补充想法。留空则沿用现有 focus。",
+        "Optional rewrite brief for this run only. Leave blank to use existing focus.",
+        "이번 다시 쓰기에만 적용할 추가 지시를 입력하세요(선택). 비워 두면 기존 focus를 그대로 사용합니다.",
+      ),
       "",
     );
     if (brief === null) return;
@@ -151,7 +154,7 @@ export function BookDetail({
       });
       refetch();
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Rewrite failed");
+      alert(e instanceof Error ? e.message : tr("重写失败", "Rewrite failed", "다시 쓰기에 실패했습니다"));
     } finally {
       setRewritingChapters((prev) => prev.filter((n) => n !== chapterNum));
     }
@@ -159,9 +162,11 @@ export function BookDetail({
 
   const handleRevise = async (chapterNum: number, mode: ReviseMode) => {
     const brief = window.prompt(
-      data?.book.language === "en"
-        ? "Optional revise brief for this run only. Leave blank to use existing focus."
-        : "可选：输入这次修订要遵循的补充想法。留空则沿用现有 focus。",
+      tr(
+        "可选：输入这次修订要遵循的补充想法。留空则沿用现有 focus。",
+        "Optional revise brief for this run only. Leave blank to use existing focus.",
+        "이번 수정에만 적용할 추가 지시를 입력하세요(선택). 비워 두면 기존 focus를 그대로 사용합니다.",
+      ),
       "",
     );
     if (brief === null) return;
@@ -174,7 +179,7 @@ export function BookDetail({
       });
       refetch();
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Revision failed");
+      alert(e instanceof Error ? e.message : tr("修订失败", "Revision failed", "수정에 실패했습니다"));
     } finally {
       setRevisingChapters((prev) => prev.filter((n) => n !== chapterNum));
     }
@@ -182,9 +187,11 @@ export function BookDetail({
 
   const handleSync = async (chapterNum: number) => {
     const brief = window.prompt(
-      data?.book.language === "en"
-        ? "Optional sync brief for interpreting the edited chapter body. Leave blank to sync directly from the text."
-        : "可选：输入这次同步时要遵循的补充说明。留空则直接按正文同步。",
+      tr(
+        "可选：输入这次同步时要遵循的补充说明。留空则直接按正文同步。",
+        "Optional sync brief for interpreting the edited chapter body. Leave blank to sync directly from the text.",
+        "편집한 챕터 본문을 해석할 때 참고할 추가 설명을 입력하세요(선택). 비워 두면 본문 그대로 동기화합니다.",
+      ),
       "",
     );
     if (brief === null) return;
@@ -197,7 +204,7 @@ export function BookDetail({
       });
       refetch();
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Sync failed");
+      alert(e instanceof Error ? e.message : tr("同步失败", "Sync failed", "동기화에 실패했습니다"));
     } finally {
       setSyncingChapters((prev) => prev.filter((n) => n !== chapterNum));
     }
@@ -218,7 +225,7 @@ export function BookDetail({
       });
       refetch();
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Save failed");
+      alert(e instanceof Error ? e.message : tr("保存失败", "Save failed", "저장에 실패했습니다"));
     } finally {
       setSavingSettings(false);
     }
@@ -230,7 +237,7 @@ export function BookDetail({
       alert(await action());
       refetch();
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Action failed");
+      alert(e instanceof Error ? e.message : tr("操作失败", "Action failed", "작업에 실패했습니다"));
     } finally {
       setBookActionPending(null);
     }
@@ -238,9 +245,11 @@ export function BookDetail({
 
   const handleReviseFoundation = async () => {
     const feedback = window.prompt(
-      data?.book.language === "en"
-        ? "Foundation revision feedback. This rewrites the book foundation, not chapter body."
-        : "输入重修基础设定的反馈。此操作会重写基础设定，不直接改正文。",
+      tr(
+        "输入重修基础设定的反馈。此操作会重写基础设定，不直接改正文。",
+        "Foundation revision feedback. This rewrites the book foundation, not chapter body.",
+        "기본 설정 수정 피드백을 입력하세요. 이 작업은 책의 기본 설정을 다시 쓰며 챕터 본문은 직접 바꾸지 않습니다.",
+      ),
       "",
     );
     if (!feedback?.trim()) return;
@@ -250,7 +259,7 @@ export function BookDetail({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ feedback }),
       });
-      return data?.book.language === "en" ? "Foundation revised." : "基础设定已重修。";
+      return tr("基础设定已重修。", "Foundation revised.", "기본 설정을 수정했습니다.");
     });
   };
 
@@ -261,7 +270,7 @@ export function BookDetail({
     </div>
   );
 
-  if (error) return <div className="text-destructive p-8 bg-destructive/5 rounded-xl border border-destructive/20">Error: {error}</div>;
+  if (error) return <div className="text-destructive p-8 bg-destructive/5 rounded-xl border border-destructive/20">{tr("错误", "Error", "오류")}: {error}</div>;
   if (!data) return null;
 
   const { book, chapters } = data;
@@ -310,7 +319,7 @@ export function BookDetail({
             {book.fanficMode && (
               <span className="flex items-center gap-1 text-purple-500">
                 <Sparkles size={12} />
-                <span className="italic">fanfic:{book.fanficMode}</span>
+                <span className="italic">{tr("同人", "fanfic", "팬픽")}:{book.fanficMode}</span>
               </span>
             )}
           </div>
@@ -396,7 +405,7 @@ export function BookDetail({
                   });
                   alert(`${t("common.exportSuccess")}\n${data.path}\n(${data.chapters} ${t("dash.chapters")})`);
                 } catch (e) {
-                  alert(e instanceof Error ? e.message : "Export failed");
+                  alert(e instanceof Error ? e.message : tr("导出失败", "Export failed", "내보내기에 실패했습니다"));
                 }
               }}
               className="flex items-center gap-2 px-4 py-2 text-xs font-bold bg-secondary/50 text-muted-foreground rounded-lg hover:text-foreground hover:bg-secondary transition-all border border-border/50"
@@ -498,7 +507,7 @@ export function BookDetail({
                             alert(`${review.summary ?? t("book.review")}\n${review.observations?.length ?? 0} ${t("book.observations")}`);
                             refetch();
                           } catch (e) {
-                            alert(e instanceof Error ? e.message : "Review failed");
+                            alert(e instanceof Error ? e.message : tr("审查失败", "Review failed", "검토에 실패했습니다"));
                           }
                         }}
                         className="p-2 rounded-lg bg-secondary text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all shadow-sm"
@@ -520,7 +529,7 @@ export function BookDetail({
                         onClick={() => handleSync(ch.number)}
                         disabled={syncingChapters.includes(ch.number) || ch.number !== latestPersistedChapter}
                         className="p-2 rounded-lg bg-secondary text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all shadow-sm disabled:opacity-50"
-                        title={data?.book.language === "en" ? "Sync truth/state from edited chapter" : "根据已编辑章节同步 truth/state"}
+                        title={tr("根据已编辑章节同步 truth/state", "Sync truth/state from edited chapter", "편집한 챕터를 기준으로 설정 파일·상태 동기화")}
                       >
                         {syncingChapters.includes(ch.number)
                           ? <div className="w-3.5 h-3.5 border-2 border-muted-foreground/20 border-t-muted-foreground rounded-full animate-spin" />
@@ -534,7 +543,7 @@ export function BookDetail({
                           if (mode) handleRevise(ch.number, mode);
                         }}
                         className="px-2 py-1.5 text-[11px] font-bold rounded-lg bg-secondary text-muted-foreground border border-border/50 outline-none hover:text-primary hover:bg-primary/10 transition-all disabled:opacity-50 cursor-pointer"
-                        title="Revise with AI"
+                        title={tr("AI 修订", "Revise with AI", "AI로 수정")}
                       >
                         <option value="" disabled>{revisingChapters.includes(ch.number) ? t("common.loading") : t("book.curate")}</option>
                         <option value="spot-fix">{t("book.spotFix")}</option>

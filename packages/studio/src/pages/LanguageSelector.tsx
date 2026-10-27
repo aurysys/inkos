@@ -1,8 +1,10 @@
 import { useState } from "react";
+import { getUiLocale } from "../lib/app-language";
 
 export function LanguageSelector({ onSelect }: { onSelect: (lang: "zh" | "en") => void }) {
   const [hovering, setHovering] = useState<"zh" | "en" | null>(null);
   const [selected, setSelected] = useState<"zh" | "en" | null>(null);
+  const isKoUi = getUiLocale() === "ko";
 
   const handleSelect = (lang: "zh" | "en") => {
     setSelected(lang);
@@ -21,6 +23,17 @@ export function LanguageSelector({ onSelect }: { onSelect: (lang: "zh" | "en") =
         <div className="text-base text-muted-foreground tracking-widest uppercase">Studio</div>
       </div>
 
+      {isKoUi && (
+        <div className="-mt-8 mb-12 max-w-xl text-center space-y-2">
+          <h1 className="text-xl font-semibold text-foreground">기본 집필 언어 선택</h1>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            작품 본문을 쓸 기본 언어를 고릅니다. 화면 언어(한국어)와는 별개입니다.
+            <br />
+            한국어 집필은 아직 지원하지 않습니다.
+          </p>
+        </div>
+      )}
+
       {/* Language cards — generous, distinct, immersive */}
       <div className="flex gap-8 mb-16">
         <button
@@ -36,6 +49,7 @@ export function LanguageSelector({ onSelect }: { onSelect: (lang: "zh" | "en") =
           }`}
         >
           <div className="font-serif text-3xl mb-4 text-foreground">中文创作</div>
+          {isKoUi && <div className="-mt-2 mb-4 text-sm font-medium text-primary">중국어로 집필</div>}
           <div className="text-base text-foreground/70 leading-relaxed mb-6">
             玄幻 · 仙侠 · 都市 · 恐怖 · 通用
           </div>
@@ -57,6 +71,7 @@ export function LanguageSelector({ onSelect }: { onSelect: (lang: "zh" | "en") =
           }`}
         >
           <div className="font-serif text-3xl italic mb-4 text-foreground">English Writing</div>
+          {isKoUi && <div className="-mt-2 mb-4 text-sm font-medium text-primary">영어로 집필</div>}
           <div className="text-base text-foreground/70 leading-relaxed mb-6">
             LitRPG · Progression · Romantasy · Sci-Fi · Isekai
           </div>
@@ -67,7 +82,7 @@ export function LanguageSelector({ onSelect }: { onSelect: (lang: "zh" | "en") =
       </div>
 
       <div className="text-sm text-muted-foreground">
-        可在设置中更改 · Can be changed in Settings
+        {isKoUi ? "집필 언어는 나중에 설정에서 바꿀 수 있습니다." : "可在设置中更改 · Can be changed in Settings"}
       </div>
     </div>
   );

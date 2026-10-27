@@ -18,6 +18,7 @@ import {
   resolveCliLanguage,
 } from "../localization.js";
 import type { LLMApiFormat } from "@actalk/inkos-core";
+import { uiText } from "../ui-locale.js";
 
 function buildDoctorProbePlans(
   preferredApiFormat: LLMApiFormat | undefined,
@@ -106,8 +107,8 @@ async function fetchDoctorModels(
 }
 
 export const doctorCommand = new Command("doctor")
-  .description("Check environment and project health")
-  .option("--repair-node-runtime", "Write .nvmrc and .node-version pinned to Node 22 for this project")
+  .description(uiText("Check environment and project health", "실행 환경과 프로젝트 상태를 점검합니다"))
+  .option("--repair-node-runtime", uiText("Write .nvmrc and .node-version pinned to Node 22 for this project", "이 프로젝트에 Node 22로 고정한 .nvmrc와 .node-version을 씁니다"))
   .action(async (opts: { repairNodeRuntime?: boolean }) => {
     const checks: Array<{ name: string; ok: boolean; detail: string }> = [];
     const root = findProjectRoot();
@@ -118,11 +119,11 @@ export const doctorCommand = new Command("doctor")
     if (opts.repairNodeRuntime) {
       const repair = await ensureNodeRuntimePinFiles(root);
       checks.push({
-        name: "Node runtime pin files repaired",
+        name: uiText("Node runtime pin files repaired", "Node 런타임 고정 파일 복구"),
         ok: true,
         detail: repair.updated
-          ? `Wrote ${repair.written.join(", ")} -> Node 22`
-          : "Already pinned to Node 22",
+          ? uiText(`Wrote ${repair.written.join(", ")} -> Node 22`, `${repair.written.join(", ")} 작성 -> Node 22`)
+          : uiText("Already pinned to Node 22", "이미 Node 22로 고정되어 있습니다"),
       });
     }
 
@@ -133,24 +134,24 @@ export const doctorCommand = new Command("doctor")
       ...evaluateNodeRuntimeSupport({ nodeVersion }),
     });
     checks.push({
-      name: "Node runtime pin files",
+      name: uiText("Node runtime pin files", "Node 런타임 고정 파일"),
       ...await inspectNodeRuntimePinFiles(root),
     });
 
     // 2. Check inkos.json exists
     try {
       await readFile(join(root, "inkos.json"), "utf-8");
-      checks.push({ name: "inkos.json", ok: true, detail: "Found" });
+      checks.push({ name: "inkos.json", ok: true, detail: uiText("Found", "있음") });
     } catch {
-      checks.push({ name: "inkos.json", ok: false, detail: "Not found. Run 'inkos init'" });
+      checks.push({ name: "inkos.json", ok: false, detail: uiText("Not found. Run 'inkos init'", "없습니다. 'inkos init'을 실행하세요") });
     }
 
     // 3. Check .env exists
     try {
       await readFile(join(root, ".env"), "utf-8");
-      checks.push({ name: ".env", ok: true, detail: "Found" });
+      checks.push({ name: ".env", ok: true, detail: uiText("Found", "있음") });
     } catch {
-      checks.push({ name: ".env", ok: false, detail: "Not found" });
+      checks.push({ name: ".env", ok: false, detail: uiText("Not found", "없음") });
     }
 
     // 4. Check global config
@@ -161,9 +162,11 @@ export const doctorCommand = new Command("doctor")
         hasGlobal = globalContent.includes("INKOS_LLM_API_KEY=") && !globalContent.includes("your-api-key-here");
       } catch { /* no global config */ }
       checks.push({
-        name: "Global Config",
+        name: uiText("Global Config", "전역 설정"),
         ok: hasGlobal,
-        detail: hasGlobal ? `Found (${GLOBAL_ENV_PATH})` : "Not set. Run 'inkos config set-global'",
+        detail: hasGlobal
+          ? uiText(`Found (${GLOBAL_ENV_PATH})`, `있음 (${GLOBAL_ENV_PATH})`)
+          : uiText("Not set. Run 'inkos config set-global'", "설정되지 않았습니다. 'inkos config set-global'을 실행하세요"),
       });
     }
 
@@ -175,12 +178,12 @@ export const doctorCommand = new Command("doctor")
       try {
         configResult = await loadConfigWithDiagnostics({ requireApiKey: false });
         checks.push({
-          name: "LLM Config Mode",
+          name: uiText("LLM Config Mode", "LLM 설정 방식"),
           ok: true,
           detail: `${configResult.diagnostics.configMode} (service=${configResult.diagnostics.serviceSource}, model=${configResult.diagnostics.modelSource}, key=${configResult.diagnostics.apiKeySource})`,
         });
         for (const warning of configResult.diagnostics.warnings) {
-          checks.push({ name: "  Config Hint", ok: true, detail: warning });
+          checks.push({ name: uiText("  Config Hint", "  설정 안내"), ok: true, detail: warning });
         }
       } catch {
         // The API connectivity check below will report the concrete config failure.
@@ -191,13 +194,13 @@ export const doctorCommand = new Command("doctor")
       const apiKeyOptional = isApiKeyOptionalForEndpoint({ provider, baseUrl });
       const hasKey = apiKeyOptional || (!!apiKey && apiKey.length > 10 && apiKey !== "your-api-key-here");
       checks.push({
-        name: "LLM API Key",
+        name: uiText("LLM API Key", "LLM API 키"),
         ok: hasKey,
         detail: apiKeyOptional
-          ? "Optional for local/self-hosted endpoint"
+          ? uiText("Optional for local/self-hosted endpoint", "로컬/자체 호스팅 엔드포인트에서는 선택 사항입니다")
           : hasKey
-            ? "Configured"
-            : "Missing — save a Studio service key or set env for CLI/daemon/deploy",
+            ? uiText("Configured", "설정됨")
+            : uiText("Missing — save a Studio service key or set env for CLI/daemon/deploy", "없습니다 — Studio에서 서비스 키를 저장하거나 CLI/데몬/배포용 환경 변수를 설정하세요"),
       });
     }
 
@@ -207,12 +210,12 @@ export const doctorCommand = new Command("doctor")
       const state = new StateManager(root);
       const books = await state.listBooks();
       checks.push({
-        name: "Books",
+        name: uiText("Books", "책"),
         ok: true,
-        detail: `${books.length} book(s) found`,
+        detail: uiText(`${books.length} book(s) found`, `책 ${books.length}권 확인`),
       });
     } catch (error) {
-      checks.push({ name: "Books", ok: false, detail: String(error) });
+      checks.push({ name: uiText("Books", "책"), ok: false, detail: String(error) });
     }
 
     // 6. API connectivity test
@@ -245,23 +248,26 @@ export const doctorCommand = new Command("doctor")
 
       if (!llmConfig) {
         checks.push({
-          name: "API Connectivity",
+          name: uiText("API Connectivity", "API 연결"),
           ok: false,
-          detail: "No LLM config available (no project config or global .env)",
+          detail: uiText("No LLM config available (no project config or global .env)", "사용할 LLM 설정이 없습니다(프로젝트 설정과 전역 .env 모두 없음)"),
         });
         checks.push({
-          name: "  Hint",
+          name: uiText("  Hint", "  안내"),
           ok: false,
-          detail: "Run `inkos setup`, `inkos config set-global`, or add LLM settings to the project .env file.",
+          detail: uiText(
+            "Run `inkos setup`, `inkos config set-global`, or add LLM settings to the project .env file.",
+            "`inkos setup` 또는 `inkos config set-global`을 실행하거나, 프로젝트 .env 파일에 LLM 설정을 추가하세요.",
+          ),
         });
       } else {
         checks.push({
-          name: "LLM Config",
+          name: uiText("LLM Config", "LLM 설정"),
           ok: true,
           detail: `provider=${llmConfig.provider} model=${llmConfig.model} stream=${llmConfig.stream ?? true} baseUrl=${llmConfig.baseUrl}`,
         });
 
-        log("\n  [..] Testing API connectivity...");
+        log(uiText("\n  [..] Testing API connectivity...", "\n  [..] API 연결을 확인하는 중..."));
 
         let connected = false;
         let detectedDetail = "";
@@ -307,14 +313,14 @@ export const doctorCommand = new Command("doctor")
         }
 
         checks.push({
-          name: "API Connectivity",
+          name: uiText("API Connectivity", "API 연결"),
           ok: connected,
           detail: connected ? detectedDetail : lastError.split("\n")[0]!,
         });
 
         if (!connected && /\b(?:401|403|429)\b|unauthorized|forbidden|quota|balance|insufficient|exceeded|额度|余额|配额/i.test(lastError)) {
           checks.push({
-            name: "  Hint",
+            name: uiText("  Hint", "  안내"),
             ok: false,
             detail: formatDoctorHintQuota(language),
           });
@@ -322,7 +328,7 @@ export const doctorCommand = new Command("doctor")
 
         if (!connected && llmConfig.provider === "openai") {
           checks.push({
-            name: "  Hint",
+            name: uiText("  Hint", "  안내"),
             ok: false,
             detail: formatDoctorHintOpenAiProbeExhausted(language),
           });
@@ -344,20 +350,20 @@ export const doctorCommand = new Command("doctor")
       }
 
       checks.push({
-        name: "API Connectivity",
+        name: uiText("API Connectivity", "API 연결"),
         ok: false,
         detail: errMsg.split("\n")[0]!,
       });
 
       if (hints.length > 0) {
         for (const hint of hints) {
-          checks.push({ name: "  Hint", ok: false, detail: hint });
+          checks.push({ name: uiText("  Hint", "  안내"), ok: false, detail: hint });
         }
       }
     }
 
     // Output
-    log("\nInkOS Doctor\n");
+    log(uiText("\nInkOS Doctor\n", "\nInkOS 진단\n"));
     for (const check of checks) {
       const icon = check.ok ? "[OK]" : "[!!]";
       log(`  ${icon} ${check.name}: ${check.detail}`);
@@ -365,8 +371,8 @@ export const doctorCommand = new Command("doctor")
 
     const failed = checks.filter((c) => !c.ok);
     if (failed.length > 0) {
-      log(`\n${failed.length} issue(s) found.`);
+      log(uiText(`\n${failed.length} issue(s) found.`, `\n문제 ${failed.length}건을 발견했습니다.`));
     } else {
-      log("\nAll checks passed.");
+      log(uiText("\nAll checks passed.", "\n모든 점검을 통과했습니다."));
     }
   });

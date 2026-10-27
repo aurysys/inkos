@@ -31,10 +31,11 @@ export const DEFAULT_DETECTION: DetectionDraft = {
   apiKeyEnv: "",
 };
 
-export const NOTIFY_TYPES: ReadonlyArray<{ value: NotifyType; label: string }> = [
+// ko：韩语界面的展示名，缺省时沿用 label（品牌名不翻译）。
+export const NOTIFY_TYPES: ReadonlyArray<{ value: NotifyType; label: string; ko?: string }> = [
   { value: "telegram", label: "Telegram" },
   { value: "feishu", label: "飞书 Feishu" },
-  { value: "wechat-work", label: "企业微信" },
+  { value: "wechat-work", label: "企业微信", ko: "WeCom(企业微信)" },
   { value: "webhook", label: "Webhook" },
 ];
 

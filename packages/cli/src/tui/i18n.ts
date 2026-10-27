@@ -1,6 +1,7 @@
 import type { ChatDepth } from "./chat-depth.js";
+import { isKoreanUi } from "../ui-locale.js";
 
-export type TuiLocale = "zh-CN" | "en";
+export type TuiLocale = "zh-CN" | "en" | "ko";
 
 export interface TuiCopy {
   readonly locale: TuiLocale;
@@ -163,10 +164,72 @@ const EN: TuiCopy = {
   },
 };
 
+const KO: TuiCopy = {
+  locale: "ko",
+  labels: {
+    project: "프로젝트",
+    book: "책",
+    depth: "깊이",
+    session: "세션",
+    messageCount: (count) => `메시지 ${count}개`,
+    stage: "단계",
+    model: "모델",
+    error: "오류",
+    recent: "최근",
+    pending: "확인 대기",
+    draft: "초안",
+    ready: "준비됨",
+    none: "없음",
+    notConfigured: "설정 안 됨",
+    unknown: "알 수 없음",
+  },
+  composer: {
+    placeholder: "InkOS에게 무엇을 쓰고, 고치고, 설명할지 알려 주세요…",
+    emptyConversation: "먼저 InkOS에게 할 일을 알려 주세요.",
+    helper: "Enter로 전송 • /new • /short • /play • /cover • /write • /confirm • /model • /depth • /help",
+    submitting: "처리 중…",
+    failed: "마지막 요청이 실패했습니다",
+    ready: "준비됨",
+  },
+  notes: {
+    help: "사용 가능한 명령: /new(새 책), /short(단편), /play(인터랙티브 월드), /cover(표지), /write(다음 챕터 쓰기), /confirm, /cancel, /model [모델명], /status, /clear, /depth, /quit. 그 밖의 논의와 창작 요청은 자연어로 입력하세요.",
+    status: (stage) => `현재 상태: ${stage}`,
+    config: "Ink 대시보드에서는 아직 대화형 /config를 지원하지 않습니다. inkos config set-global을 사용하세요.",
+    depthSet: (depthLabel) => `사고 깊이를 ${depthLabel} 모드로 설정했습니다.`,
+    modelCurrent: (modelLabel) => `현재 모델: ${modelLabel}`,
+    modelSet: (model) => `이 TUI 세션의 모델을 변경했습니다: ${model}`,
+    newBookGuide: "새 책 구상을 시작합니다. 장르, 세계관, 주인공, 핵심 갈등 등 떠오르는 아이디어를 자유롭게 설명하세요. AI가 단계별로 안내하며, 정보가 충분해지면 바로 책을 생성합니다.",
+    noLlmConfig: "LLM 설정을 찾지 못했습니다.",
+    setupProvider: "먼저 API 서비스를 설정하세요.",
+  },
+  roles: {
+    user: "나",
+    assistant: "InkOS",
+    system: "시스템",
+  },
+  activity: {
+    thinking: "생각 중",
+    checking: "확인 중",
+    writing: "작성 중",
+    reviewing: "검토 중",
+    updating: "업데이트 중",
+  },
+  depthLabels: {
+    light: "간단",
+    normal: "표준",
+    deep: "심층",
+  },
+};
+
 export function resolveTuiLocale(
   env: NodeJS.ProcessEnv = process.env,
   preferredLanguage?: string,
 ): TuiLocale {
+  // A partial env (e.g. only locale vars) still inherits INKOS_UI_LOCALE from the process.
+  if (isKoreanUi(env === process.env ? env : { ...process.env, ...env })) {
+    return "ko";
+  }
+
   const requested = normalizeLocale(env.INKOS_TUI_LOCALE ?? env.INKOS_LOCALE);
   if (requested) {
     return requested;
@@ -182,6 +245,7 @@ export function resolveTuiLocale(
 }
 
 export function getTuiCopy(locale: TuiLocale): TuiCopy {
+  if (locale === "ko") return KO;
   return locale === "en" ? EN : ZH_CN;
 }
 

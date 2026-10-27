@@ -40,6 +40,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { tr } from "../../lib/app-language";
 import type { ChatStatus, FileUIPart, SourceDocumentUIPart } from "ai";
 import {
   CornerDownLeftIcon,
@@ -415,7 +416,7 @@ export type PromptInputActionAddAttachmentsProps = ComponentProps<
 };
 
 export const PromptInputActionAddAttachments = ({
-  label = "Add photos or files",
+  label = tr("添加图片或文件", "Add photos or files", "사진 또는 파일 추가"),
   ...props
 }: PromptInputActionAddAttachmentsProps) => {
   const attachments = usePromptInputAttachments();
@@ -442,7 +443,7 @@ export type PromptInputActionAddScreenshotProps = ComponentProps<
 };
 
 export const PromptInputActionAddScreenshot = ({
-  label = "Take screenshot",
+  label = tr("截取屏幕", "Take screenshot", "스크린샷 찍기"),
   onSelect,
   ...props
 }: PromptInputActionAddScreenshotProps) => {
@@ -582,7 +583,7 @@ export const PromptInput = ({
       if (incoming.length && accepted.length === 0) {
         onError?.({
           code: "accept",
-          message: "No files match the accepted types.",
+          message: tr("没有符合允许类型的文件。", "No files match the accepted types.", "허용된 형식에 맞는 파일이 없습니다."),
         });
         return;
       }
@@ -592,7 +593,7 @@ export const PromptInput = ({
       if (accepted.length > 0 && sized.length === 0) {
         onError?.({
           code: "max_file_size",
-          message: "All files exceed the maximum size.",
+          message: tr("所有文件都超过了大小上限。", "All files exceed the maximum size.", "모든 파일이 최대 크기를 초과합니다."),
         });
         return;
       }
@@ -607,7 +608,7 @@ export const PromptInput = ({
         if (typeof capacity === "number" && sized.length > capacity) {
           onError?.({
             code: "max_files",
-            message: "Too many files. Some were not added.",
+            message: tr("文件过多，部分文件未添加。", "Too many files. Some were not added.", "파일이 너무 많아 일부를 추가하지 못했습니다."),
           });
         }
         const next: (FileUIPart & { id: string })[] = [];
@@ -646,7 +647,7 @@ export const PromptInput = ({
       if (incoming.length && accepted.length === 0) {
         onError?.({
           code: "accept",
-          message: "No files match the accepted types.",
+          message: tr("没有符合允许类型的文件。", "No files match the accepted types.", "허용된 형식에 맞는 파일이 없습니다."),
         });
         return;
       }
@@ -656,7 +657,7 @@ export const PromptInput = ({
       if (accepted.length > 0 && sized.length === 0) {
         onError?.({
           code: "max_file_size",
-          message: "All files exceed the maximum size.",
+          message: tr("所有文件都超过了大小上限。", "All files exceed the maximum size.", "모든 파일이 최대 크기를 초과합니다."),
         });
         return;
       }
@@ -671,7 +672,7 @@ export const PromptInput = ({
       if (typeof capacity === "number" && sized.length > capacity) {
         onError?.({
           code: "max_files",
-          message: "Too many files. Some were not added.",
+          message: tr("文件过多，部分文件未添加。", "Too many files. Some were not added.", "파일이 너무 많아 일부를 추가하지 못했습니다."),
         });
       }
 
@@ -907,12 +908,12 @@ export const PromptInput = ({
     <>
       <input
         accept={accept}
-        aria-label="Upload files"
+        aria-label={tr("上传文件", "Upload files", "파일 업로드")}
         className="hidden"
         multiple={multiple}
         onChange={handleChange}
         ref={inputRef}
-        title="Upload files"
+        title={tr("上传文件", "Upload files", "파일 업로드")}
         type="file"
       />
       <form
@@ -957,7 +958,7 @@ export const PromptInputTextarea = ({
   onChange,
   onKeyDown,
   className,
-  placeholder = "What would you like to know?",
+  placeholder = tr("想了解什么？", "What would you like to know?", "무엇이 궁금하신가요?"),
   ...props
 }: PromptInputTextareaProps) => {
   const controller = useOptionalPromptInputController();
@@ -1245,7 +1246,7 @@ export const PromptInputSubmit = ({
 
   return (
     <InputGroupButton
-      aria-label={isGenerating ? "Stop" : "Submit"}
+      aria-label={isGenerating ? tr("停止", "Stop", "중지") : tr("发送", "Submit", "보내기")}
       className={cn(className)}
       onClick={handleClick}
       size={size}

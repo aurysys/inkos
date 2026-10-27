@@ -12,15 +12,16 @@ import {
   resolveCliLanguage,
 } from "../localization.js";
 import { findProjectRoot, log, logError, resolveBookId } from "../utils.js";
+import { uiText } from "../ui-locale.js";
 
 export const chapterCommand = new Command("chapter")
-  .description("Manage chapters");
+  .description(uiText("Manage chapters", "챕터를 관리합니다"));
 
 chapterCommand
   .command("sync")
-  .description("Recount chapter word counts from chapter files and update chapters/index.json")
-  .argument("[book-id]", "Book ID (auto-detected if only one book)")
-  .option("--json", "Output JSON")
+  .description(uiText("Recount chapter word counts from chapter files and update chapters/index.json", "챕터 파일에서 글자 수를 다시 세어 chapters/index.json을 갱신합니다"))
+  .argument("[book-id]", uiText("Book ID (auto-detected if only one book)", "책 ID(책이 하나뿐이면 자동으로 찾습니다)"))
+  .option("--json", uiText("Output JSON", "JSON으로 출력합니다"))
   .action(async (bookIdArg: string | undefined, opts) => {
     try {
       const root = findProjectRoot();
@@ -51,7 +52,7 @@ chapterCommand
       if (opts.json) {
         log(JSON.stringify({ error: String(e) }));
       } else {
-        logError(`Failed to sync chapter word counts: ${e}`);
+        logError(uiText(`Failed to sync chapter word counts: ${e}`, `챕터 글자 수를 동기화하지 못했습니다: ${e}`));
       }
       process.exit(1);
     }
@@ -59,11 +60,11 @@ chapterCommand
 
 chapterCommand
   .command("delete")
-  .description("Delete the latest chapter: move its file to chapters/.trash/ and roll the index and story state back")
-  .argument("<book-id>", "Book ID")
-  .option("--chapter <n>", "Chapter number to delete (must be the latest chapter; defaults to it)")
-  .option("--force", "Skip confirmation prompt")
-  .option("--json", "Output JSON")
+  .description(uiText("Delete the latest chapter: move its file to chapters/.trash/ and roll the index and story state back", "최신 챕터를 삭제합니다: 파일을 chapters/.trash/로 옮기고 인덱스와 이야기 상태를 되돌립니다"))
+  .argument("<book-id>", uiText("Book ID", "책 ID"))
+  .option("--chapter <n>", uiText("Chapter number to delete (must be the latest chapter; defaults to it)", "삭제할 챕터 번호(최신 챕터여야 하며, 생략하면 최신 챕터)"))
+  .option("--force", uiText("Skip confirmation prompt", "확인 질문을 건너뜁니다"))
+  .option("--json", uiText("Output JSON", "JSON으로 출력합니다"))
   .action(async (bookIdArg: string, opts) => {
     try {
       const root = findProjectRoot();
@@ -110,7 +111,7 @@ chapterCommand
       if (opts.json) {
         log(JSON.stringify({ error: String(e) }));
       } else {
-        logError(`Failed to delete chapter: ${e}`);
+        logError(uiText(`Failed to delete chapter: ${e}`, `챕터를 삭제하지 못했습니다: ${e}`));
       }
       process.exit(1);
     }

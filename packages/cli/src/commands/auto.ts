@@ -20,14 +20,15 @@ import {
   type CliLanguage,
 } from "../localization.js";
 import { sendCommandNotification } from "../notify-helper.js";
+import { uiText } from "../ui-locale.js";
 
 export const autoCommand = new Command("auto")
-  .description("Auto-write chapters until the book reaches a target chapter number: auto [book-id] <target-chapter>")
-  .argument("<args...>", "Book ID (optional, auto-detected if only one book) and target chapter number")
-  .option("--words <n>", "Words per chapter (overrides book config)")
-  .option("--json", "Output JSON")
-  .option("-q, --quiet", "Suppress console output")
-  .option("--notify", "Send a notification to configured notify channels when the command finishes")
+  .description(uiText("Auto-write chapters until the book reaches a target chapter number: auto [book-id] <target-chapter>", "목표 챕터 번호에 이를 때까지 챕터를 자동으로 씁니다: auto [book-id] <target-chapter>"))
+  .argument("<args...>", uiText("Book ID (optional, auto-detected if only one book) and target chapter number", "책 ID(선택, 책이 하나뿐이면 자동으로 찾습니다)와 목표 챕터 번호"))
+  .option("--words <n>", uiText("Words per chapter (overrides book config)", "챕터당 글자 수(책 설정보다 우선합니다)"))
+  .option("--json", uiText("Output JSON", "JSON으로 출력합니다"))
+  .option("-q, --quiet", uiText("Suppress console output", "콘솔 출력을 숨깁니다"))
+  .option("--notify", uiText("Send a notification to configured notify channels when the command finishes", "명령이 끝나면 설정된 알림 채널로 알림을 보냅니다"))
   .action(async (args: ReadonlyArray<string>, opts) => {
     let notifyLanguage: CliLanguage = "zh";
     let notifyBookName: string | undefined;
@@ -38,17 +39,17 @@ export const autoCommand = new Command("auto")
       let targetChapter: number;
       if (args.length === 1) {
         targetChapter = parseInt(args[0]!, 10);
-        if (isNaN(targetChapter)) throw new Error(`Expected target chapter number, got "${args[0]}"`);
+        if (isNaN(targetChapter)) throw new Error(uiText(`Expected target chapter number, got "${args[0]}"`, `목표 챕터 번호가 필요하지만 "${args[0]}"이(가) 입력되었습니다`));
         bookId = await resolveBookId(undefined, root);
       } else if (args.length === 2) {
         targetChapter = parseInt(args[1]!, 10);
-        if (isNaN(targetChapter)) throw new Error(`Expected target chapter number, got "${args[1]}"`);
+        if (isNaN(targetChapter)) throw new Error(uiText(`Expected target chapter number, got "${args[1]}"`, `목표 챕터 번호가 필요하지만 "${args[1]}"이(가) 입력되었습니다`));
         bookId = await resolveBookId(args[0], root);
       } else {
-        throw new Error("Usage: inkos auto [book-id] <target-chapter>");
+        throw new Error(uiText("Usage: inkos auto [book-id] <target-chapter>", "사용법: inkos auto [book-id] <target-chapter>"));
       }
       if (targetChapter < 1) {
-        throw new Error(`Target chapter must be >= 1, got ${targetChapter}`);
+        throw new Error(uiText(`Target chapter must be >= 1, got ${targetChapter}`, `목표 챕터는 1 이상이어야 합니다(입력값: ${targetChapter})`));
       }
 
       const state = new StateManager(root);
@@ -139,7 +140,7 @@ export const autoCommand = new Command("auto")
       if (opts.json) {
         log(JSON.stringify({ error: String(e) }));
       } else {
-        logError(`Auto-write failed: ${e}`);
+        logError(uiText(`Auto-write failed: ${e}`, `자동 집필에 실패했습니다: ${e}`));
       }
       process.exit(1);
     }

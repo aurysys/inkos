@@ -29,7 +29,13 @@ import { useSSE } from "./hooks/use-sse";
 import { useSessionEvents } from "./hooks/use-session-events";
 import { useTheme } from "./hooks/use-theme";
 import { useI18n } from "./hooks/use-i18n";
-import { setAppLanguage, tr } from "./lib/app-language";
+import {
+  getUiLocalePreference,
+  setAppLanguage,
+  setUiLocalePreference,
+  tr,
+  type UiLocalePreference,
+} from "./lib/app-language";
 import { postApi, putApi, useApi } from "./hooks/use-api";
 import { Sun, Moon } from "lucide-react";
 import { House } from "lucide-react";
@@ -57,7 +63,7 @@ export function App() {
   const { route, setRoute } = useHashRoute();
   const sse = useSSE();
   const { theme, setTheme } = useTheme();
-  const { t, lang: currentLang } = useI18n();
+  const { t, lang: currentLang, uiLocale } = useI18n();
   const { data: project, error: projectError, refetch: refetchProject } = useApi<{ language: string; languageExplicit: boolean }>("/project");
   const [showLanguageSelector, setShowLanguageSelector] = useState(false);
   const [ready, setReady] = useState(false);
@@ -73,6 +79,19 @@ export function App() {
   useEffect(() => {
     setAppLanguage(currentLang);
   }, [currentLang]);
+
+  // 服务端生成的界面文案（工具标签、错误提示）跟随本浏览器的界面语言偏好。
+  useEffect(() => {
+    void putApi("/ui-locale", { preference: getUiLocalePreference() }).catch(() => undefined);
+  }, []);
+
+  const switchUiLocale = async (preference: UiLocalePreference, projectLanguage?: "zh" | "en") => {
+    setUiLocalePreference(preference);
+    await putApi("/ui-locale", { preference });
+    if (projectLanguage) await putApi("/project", { language: projectLanguage });
+    // 界面语言是模块级状态，整页重载让所有组件一次性用新语言渲染。
+    window.location.reload();
+  };
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", isDark);
@@ -133,21 +152,27 @@ export function App() {
       <div className="min-h-screen bg-background flex items-center justify-center p-6">
         <div className="max-w-md w-full rounded-2xl border border-destructive/30 bg-destructive/5 p-6 space-y-4">
           <div>
-            <h1 className="text-lg font-semibold text-destructive">无法加载项目配置 / Failed to load project config</h1>
+            <h1 className="text-lg font-semibold text-destructive">{uiLocale === "ko" ? "프로젝트 설정을 불러오지 못했습니다" : "无法加载项目配置 / Failed to load project config"}</h1>
             <p className="mt-2 text-sm text-muted-foreground break-all">{projectError}</p>
           </div>
           {/* 项目配置没加载出来，语言未知，所以这屏中英双语并排展示。 */}
-          <p className="text-sm text-muted-foreground">
-            请检查项目根目录下的 inkos.json 是否存在且为合法 JSON，然后重试。
-            <br />
-            Check that inkos.json in the project root exists and is valid JSON, then retry.
-          </p>
+          {uiLocale === "ko" ? (
+            <p className="text-sm text-muted-foreground">
+              프로젝트 루트에 inkos.json이 있는지, 올바른 JSON 형식인지 확인한 뒤 다시 시도하세요.
+            </p>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              请检查项目根目录下的 inkos.json 是否存在且为合法 JSON，然后重试。
+              <br />
+              Check that inkos.json in the project root exists and is valid JSON, then retry.
+            </p>
+          )}
           <button
             type="button"
             onClick={() => refetchProject()}
             className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
           >
-            重试 / Retry
+            {uiLocale === "ko" ? "다시 시도" : "重试 / Retry"}
           </button>
         </div>
       </div>
@@ -198,20 +223,21 @@ export function App() {
           <div className="flex items-center gap-3">
             <div className="flex gap-0.5 bg-muted/50 rounded-lg p-0.5">
               <button
-                onClick={async () => {
-                  await putApi("/project", { language: "zh" });
-                  refetchProject();
-                }}
-                className={`px-2.5 py-1 text-[16px] font-medium rounded-md ${currentLang === "zh" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+                onClick={() => void switchUiLocale("ko")}
+                title={tr("界面语言：韩语（写作语言不变）", "UI language: Korean (writing language unchanged)", "화면 언어: 한국어 (집필 언어는 그대로)")}
+                className={`px-2.5 py-1 text-[16px] font-medium rounded-md ${uiLocale === "ko" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+              >
+                한
+              </button>
+              <button
+                onClick={() => void switchUiLocale("follow", "zh")}
+                className={`px-2.5 py-1 text-[16px] font-medium rounded-md ${uiLocale === "zh" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
               >
                 中
               </button>
               <button
-                onClick={async () => {
-                  await putApi("/project", { language: "en" });
-                  refetchProject();
-                }}
-                className={`px-2.5 py-1 text-[16px] font-medium rounded-md ${currentLang === "en" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+                onClick={() => void switchUiLocale("follow", "en")}
+                className={`px-2.5 py-1 text-[16px] font-medium rounded-md ${uiLocale === "en" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
               >
                 EN
               </button>
@@ -380,12 +406,12 @@ export function App() {
             </div>
           )}
           {route.page === "film-studio" && (
-            <Suspense fallback={<div className="p-6 text-sm">{tr("加载创作向导…", "Loading creation wizard…")}</div>}>
+            <Suspense fallback={<div className="p-6 text-sm">{tr("加载创作向导…", "Loading creation wizard…", "창작 마법사 불러오는 중…")}</div>}>
               <FilmWizard projectId={route.projectId} nav={nav} theme={theme} t={t} sse={sse} />
             </Suspense>
           )}
           {route.page === "flow" && (
-            <Suspense fallback={<div className="p-6 text-sm">{tr("加载流程图…", "Loading flow view…")}</div>}>
+            <Suspense fallback={<div className="p-6 text-sm">{tr("加载流程图…", "Loading flow view…", "흐름도 불러오는 중…")}</div>}>
               <FlowView projectId={route.projectId} nav={nav} theme={theme} t={t} />
             </Suspense>
           )}

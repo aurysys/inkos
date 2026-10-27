@@ -61,14 +61,14 @@ export function SummarySection({ bookId }: SummarySectionProps) {
       onClick={() => openArtifact("outline/story_frame.md")}
       className="mt-2 text-[15px] leading-6 text-primary hover:underline font-['SimSun','Songti_SC','STSong',serif]"
     >
-      {tr("查看完整设定 →", "View full foundation →")}
+      {tr("查看完整设定 →", "View full foundation →", "전체 기본 설정 보기 →")}
     </button>
   );
 
   return (
     <>
       {worldOverview && (
-        <SidebarCard title={tr("世界观", "World")}>
+        <SidebarCard title={tr("世界观", "World", "세계관")}>
           <Streamdown className={SIDEBAR_MD_CLASS} plugins={streamdownPlugins}>
             {worldOverview}
           </Streamdown>

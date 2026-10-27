@@ -86,21 +86,21 @@ export function StoryGraphTree({
             className={`ml-auto px-3 py-1 rounded ${c.btnPrimary}`}
             data-testid="film-play"
           >
-            {tr("试玩", "Play")} →
+            {tr("试玩", "Play", "플레이")} →
           </button>
           <button
             onClick={() => nav.toFlow(projectId)}
             className={`px-3 py-1 rounded ${c.btnSecondary}`}
             data-testid="open-flow"
           >
-            {tr("流程图", "Flow")} →
+            {tr("流程图", "Flow", "흐름도")} →
           </button>
           <button
             onClick={() => nav.toFilmAuthor(projectId)}
             className={`px-3 py-1 rounded ${c.btnSecondary}`}
             data-testid="open-authoring"
           >
-            {tr("AI 对话创作", "AI chat authoring")} →
+            {tr("AI 对话创作", "AI chat authoring", "AI 대화 창작")} →
           </button>
           {exportUrl && (
             <a
@@ -109,7 +109,7 @@ export function StoryGraphTree({
               className={`px-3 py-1 rounded ${c.btnSecondary}`}
               data-testid="film-export-package"
             >
-              {tr("导出整包", "Export package")}
+              {tr("导出整包", "Export package", "전체 패키지 내보내기")}
             </a>
           )}
         </div>
@@ -119,15 +119,15 @@ export function StoryGraphTree({
 
       {saveError && (
         <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive" data-testid="film-save-error">
-          {tr("保存失败：", "Save failed: ")}{saveError}
+          {tr("保存失败：", "Save failed: ", "저장 실패: ")}{saveError}
         </div>
       )}
 
       {graph.worldAnchor && (
         <div className="border rounded p-3 text-sm" data-testid="film-world">
-          <div className={c.muted}>{tr("世界锚点", "World anchor")}</div>
-          <div>{tr("核心：", "Core: ")}{graph.worldAnchor.storyCore}</div>
-          <div>{tr("主题：", "Theme: ")}{graph.worldAnchor.theme} · {tr("题材：", "Genre: ")}{graph.worldAnchor.genre}</div>
+          <div className={c.muted}>{tr("世界锚点", "World anchor", "세계 앵커")}</div>
+          <div>{tr("核心：", "Core: ", "핵심: ")}{graph.worldAnchor.storyCore}</div>
+          <div>{tr("主题：", "Theme: ", "주제: ")}{graph.worldAnchor.theme} · {tr("题材：", "Genre: ", "장르: ")}{graph.worldAnchor.genre}</div>
         </div>
       )}
 
@@ -191,7 +191,7 @@ function NodeEditor({
         <div className="mt-2 space-y-1">
           {node.dialogue.map((l, i) => (
             <div key={i} className="text-xs">
-              <span className={colors.accent}>{l.speaker}{tr("：", ": ")}</span>
+              <span className={colors.accent}>{l.speaker}{tr("：", ": ", ": ")}</span>
               {l.text}
             </div>
           ))}
@@ -204,7 +204,7 @@ function NodeEditor({
           onClick={() => onSave({ ...node, sceneDesc: scene })}
           className={`px-3 py-1 text-xs rounded ${colors.btnPrimary} disabled:opacity-40`}
         >
-          {saving ? tr("保存中…", "Saving…") : tr("保存", "Save")}
+          {saving ? tr("保存中…", "Saving…", "저장 중…") : tr("保存", "Save", "저장")}
         </button>
         <button
           data-testid={`gen-image-${node.id}`}
@@ -212,7 +212,7 @@ function NodeEditor({
           onClick={() => onGenerateImage(node.id)}
           className={`px-3 py-1 text-xs rounded ${colors.btnSecondary} disabled:opacity-40`}
         >
-          {generating ? tr("生成中…", "Generating…") : tr("生成配图", "Generate image")}
+          {generating ? tr("生成中…", "Generating…", "생성 중…") : tr("生成配图", "Generate image", "이미지 생성")}
         </button>
       </div>
     </div>

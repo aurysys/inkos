@@ -7,6 +7,7 @@ import type { ChatAttachmentPayload } from "../store/chat/types";
 import { chatSelectors, useChatStore } from "../store/chat";
 import type { ChatSessionKind } from "../store/chat";
 import { useServiceStore } from "../store/service";
+import { getAppLanguage, getUiLocale, tr } from "../lib/app-language";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -182,7 +183,6 @@ function cancelScrollFrame(id: ScrollFrameId): void {
 }
 
 function SkillPickerPanel({
-  isZh,
   skills,
   diagnostics,
   selectedSkillIds,
@@ -193,7 +193,6 @@ function SkillPickerPanel({
   onToggleSkill,
   onImport,
 }: {
-  readonly isZh: boolean;
   readonly skills: ReadonlyArray<StudioSkill>;
   readonly diagnostics?: ReadonlyArray<{ readonly path?: string; readonly message?: string }>;
   readonly selectedSkillIds: ReadonlyArray<string>;
@@ -212,11 +211,13 @@ function SkillPickerPanel({
       <div className="border-b border-border/40 px-4 py-3">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <div className="text-sm font-bold">{isZh ? "选择 Agent Skill" : "Select Agent Skills"}</div>
+            <div className="text-sm font-bold">{tr("选择 Agent Skill", "Select Agent Skills", "에이전트 스킬 선택")}</div>
             <p className="mt-0.5 text-xs leading-5 text-muted-foreground">
-              {isZh
-                ? "Agent 会按当前意图自主调用；点选 Skill 可强制它随下一条消息启用。"
-                : "The agent can choose a skill from your intent; selecting one forces it for the next message."}
+              {tr(
+                "Agent 会按当前意图自主调用；点选 Skill 可强制它随下一条消息启用。",
+                "The agent can choose a skill from your intent; selecting one forces it for the next message.",
+                "에이전트가 현재 의도에 맞춰 스킬을 직접 고릅니다. 스킬을 선택하면 다음 메시지에서 반드시 사용합니다.",
+              )}
             </p>
           </div>
           <div className="flex shrink-0 items-center">
@@ -227,7 +228,7 @@ function SkillPickerPanel({
               className="flex items-center gap-1.5 rounded-lg border border-border/50 px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary disabled:opacity-40"
             >
               <FolderUp size={13} />
-              {isZh ? "导入" : "Import"}
+              {tr("导入", "Import", "가져오기")}
             </button>
             <input
               ref={folderInputRef}
@@ -247,20 +248,20 @@ function SkillPickerPanel({
         {createError ? <div className="mb-3 rounded-xl bg-destructive/10 px-3 py-2 text-xs text-destructive">{createError}</div> : null}
         {diagnostics?.length ? (
           <div className="mb-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
-            <div className="font-semibold">{isZh ? "部分外部 Skill 未加载" : "Some external skills were not loaded"}</div>
+            <div className="font-semibold">{tr("部分外部 Skill 未加载", "Some external skills were not loaded", "일부 외부 스킬을 불러오지 못했습니다")}</div>
             {diagnostics.slice(0, 4).map((item, index) => (
               <div key={`${item.path ?? "skill"}-${index}`} className="mt-1 break-all">
-                {item.path ? `${item.path}: ` : ""}{item.message ?? (isZh ? "格式无效" : "Invalid format")}
+                {item.path ? `${item.path}: ` : ""}{item.message ?? tr("格式无效", "Invalid format", "형식이 올바르지 않습니다")}
               </div>
             ))}
           </div>
         ) : null}
         {loading ? (
-          <div className="px-2 py-6 text-center text-sm text-muted-foreground">{isZh ? "加载 Skill..." : "Loading skills..."}</div>
+          <div className="px-2 py-6 text-center text-sm text-muted-foreground">{tr("加载 Skill...", "Loading skills...", "스킬 불러오는 중...")}</div>
         ) : error ? (
           <div className="rounded-xl bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</div>
         ) : skills.length === 0 ? (
-          <div className="px-2 py-6 text-center text-sm text-muted-foreground">{isZh ? "还没有可用 Skill。" : "No skills available yet."}</div>
+          <div className="px-2 py-6 text-center text-sm text-muted-foreground">{tr("还没有可用 Skill。", "No skills available yet.", "사용할 수 있는 스킬이 아직 없습니다.")}</div>
         ) : (
           <div className="grid gap-2 md:grid-cols-2">
             {skills.map((skill) => {
@@ -300,7 +301,7 @@ function SkillPickerPanel({
 
 // -- Component --
 
-export function ChatPage({ activeBookId, activeWorkId, workProfileId, mode = activeBookId ? "book" : "book-create", nav, theme, t, sse: _sse }: ChatPageProps) {
+export function ChatPage({ activeBookId, activeWorkId, workProfileId, mode = activeBookId ? "book" : "book-create", nav, theme, t: _t, sse: _sse }: ChatPageProps) {
   // -- Store selectors --
   const messages = useChatStore(chatSelectors.activeMessages);
   const activeSession = useChatStore(chatSelectors.activeSession);
@@ -333,7 +334,7 @@ export function ChatPage({ activeBookId, activeWorkId, workProfileId, mode = act
   const fileInputRef = useRef<HTMLInputElement>(null);
   const autoScrollPinnedRef = useRef(true);
 
-  const isZh = t("nav.connected") === "\u5DF2\u8FDE\u63A5";
+  const uiLocale = getUiLocale();
   const hasBook = Boolean(activeBookId);
   const currentSessionKind: ChatSessionKind = activeSession?.sessionKind
     ?? (mode === "interactive-film-authoring" ? "interactive-film-authoring"
@@ -460,12 +461,12 @@ export function ChatPage({ activeBookId, activeWorkId, workProfileId, mode = act
   }, [customModelsLoading, groupedModels, services, servicesLoading, bankModelsLoading]);
 
   const selectedModelLabel = useMemo(() => {
-    if (!selectedModel) return isZh ? "选择模型" : "Select model";
+    if (!selectedModel) return tr("选择模型", "Select model", "모델 선택");
     const group = groupedModels.find((item) => item.service === selectedService);
     const model = group?.models.find((item) => item.id === selectedModel);
     const modelLabel = model?.name ?? selectedModel;
     return group ? `${group.label} · ${modelLabel}` : modelLabel;
-  }, [groupedModels, selectedModel, selectedService, isZh]);
+  }, [groupedModels, selectedModel, selectedService, uiLocale]);
 
   // A session model is canonical once the session has run; project config only
   // seeds sessions that have not selected a model yet.
@@ -644,7 +645,11 @@ export function ChatPage({ activeBookId, activeWorkId, workProfileId, mode = act
     }
     setAttachedFiles((prev) => [...prev, ...accepted].slice(0, MAX_CHAT_ATTACHMENTS));
     setAttachmentError(rejected.length > 0
-      ? (isZh ? `以下文件过大，未添加：${rejected.join("、")}` : `Some files were too large: ${rejected.join(", ")}`)
+      ? tr(
+        `以下文件过大，未添加：${rejected.join("、")}`,
+        `Some files were too large: ${rejected.join(", ")}`,
+        `파일이 너무 커서 추가하지 않았습니다: ${rejected.join(", ")}`,
+      )
       : null);
   };
 
@@ -744,9 +749,11 @@ export function ChatPage({ activeBookId, activeWorkId, workProfileId, mode = act
     markProposalResolved(details.execId, "rejected");
     if (!activeSessionId) return;
     autoScrollPinnedRef.current = true;
-    const rejectionText = isZh
-      ? `取消这次操作：${details.title ?? details.instruction}`
-      : `Cancel this action: ${details.title ?? details.instruction}`;
+    const rejectionText = tr(
+      `取消这次操作：${details.title ?? details.instruction}`,
+      `Cancel this action: ${details.title ?? details.instruction}`,
+      `이 작업을 취소합니다: ${details.title ?? details.instruction}`,
+    );
     await sendMessage(activeSessionId, rejectionText, {
       activeBookId,
       sessionKind: currentSessionKind,
@@ -759,7 +766,7 @@ export function ChatPage({ activeBookId, activeWorkId, workProfileId, mode = act
     autoScrollPinnedRef.current = true;
     await sendMessage(
       activeSessionId,
-      buildNarrativeForecastSelectionInstruction(forecastId, branchId, isZh ? "zh" : "en"),
+      buildNarrativeForecastSelectionInstruction(forecastId, branchId, getAppLanguage()),
       {
         activeBookId,
         sessionKind: "book",
@@ -773,7 +780,7 @@ export function ChatPage({ activeBookId, activeWorkId, workProfileId, mode = act
     autoScrollPinnedRef.current = true;
     await sendMessage(
       activeSessionId,
-      buildNarrativeForecastRecheckInstruction(forecastId, isZh ? "zh" : "en"),
+      buildNarrativeForecastRecheckInstruction(forecastId, getAppLanguage()),
       {
         activeBookId,
         sessionKind: "book",
@@ -828,18 +835,24 @@ export function ChatPage({ activeBookId, activeWorkId, workProfileId, mode = act
 
   const emptyGuidance = (() => {
     if (currentSessionKind === "short") {
-      return isZh
-        ? "说一个短篇方向、标题灵感、人物压力或核心冲突，我会走 InkOS Short 生成正文、简介和封面。"
-        : "Describe a short-fiction direction, title hook, pressure, or core conflict to run InkOS Short.";
+      return tr(
+        "说一个短篇方向、标题灵感、人物压力或核心冲突，我会走 InkOS Short 生成正文、简介和封面。",
+        "Describe a short-fiction direction, title hook, pressure, or core conflict to run InkOS Short.",
+        "단편의 방향, 제목 아이디어, 인물이 받는 압박이나 핵심 갈등을 알려 주세요. InkOS Short로 본문, 소개글, 표지를 만듭니다.",
+      );
     }
     if (isPlaySurface) {
-      return isZh
-        ? "说一个可玩的世界、角色处境或开场动作，我会启动互动世界；之后你可以自由行动或点建议动作。"
-        : "Describe a playable world, character situation, or opening action to start an interactive world.";
+      return tr(
+        "说一个可玩的世界、角色处境或开场动作，我会启动互动世界；之后你可以自由行动或点建议动作。",
+        "Describe a playable world, character situation, or opening action to start an interactive world.",
+        "플레이할 세계, 인물이 처한 상황이나 첫 행동을 알려 주세요. 인터랙티브 세계를 시작한 뒤에는 자유롭게 행동하거나 제안된 행동을 고를 수 있습니다.",
+      );
     }
-    return isZh
-      ? "\u544A\u8BC9\u6211\u4F60\u60F3\u5199\u4EC0\u4E48\u2014\u2014\u9898\u6750\u3001\u4E16\u754C\u89C2\u3001\u4E3B\u89D2\u3001\u6838\u5FC3\u51B2\u7A81"
-      : "Tell me what you want to write \u2014 genre, world, protagonist, core conflict";
+    return tr(
+      "\u544A\u8BC9\u6211\u4F60\u60F3\u5199\u4EC0\u4E48\u2014\u2014\u9898\u6750\u3001\u4E16\u754C\u89C2\u3001\u4E3B\u89D2\u3001\u6838\u5FC3\u51B2\u7A81",
+      "Tell me what you want to write \u2014 genre, world, protagonist, core conflict",
+      "무엇을 쓰고 싶은지 알려 주세요 \u2014 장르, 세계관, 주인공, 핵심 갈등",
+    );
   })();
 
   return (
@@ -855,7 +868,7 @@ export function ChatPage({ activeBookId, activeWorkId, workProfileId, mode = act
               catch(error) { setWorkSessionError(error instanceof Error ? error.message : String(error)); }
               finally { setCreatingWorkSession(false); }
             })(); }}>
-            {isZh ? "新建作品会话" : "New work session"}
+            {tr("新建作品会话", "New work session", "새 작품 세션")}
           </button>
         </div>
       ) : null}
@@ -878,7 +891,7 @@ export function ChatPage({ activeBookId, activeWorkId, workProfileId, mode = act
               <Gamepad2 size={24} className="text-muted-foreground" />
             </div>
             <p className="text-sm text-muted-foreground/70 max-w-md leading-7">
-              {isZh ? "选个玩法，进去再聊你想玩的世界。" : "Pick a playstyle, then describe the world you want in chat."}
+              {tr("选个玩法，进去再聊你想玩的世界。", "Pick a playstyle, then describe the world you want in chat.", "플레이 방식을 고른 뒤, 원하는 세계를 대화로 설명하세요.")}
             </p>
             <div className="flex gap-3">
               <button
@@ -886,16 +899,16 @@ export function ChatPage({ activeBookId, activeWorkId, workProfileId, mode = act
                 onClick={() => { if (activeSessionId) setSessionPlayMode(activeSessionId, "guided"); }}
                 className="w-40 rounded-xl border border-border/50 bg-secondary/30 px-4 py-3 text-left transition-all hover:border-primary/40 hover:bg-primary/5"
               >
-                <div className="text-sm font-medium text-foreground">{isZh ? "点着玩" : "Choices"}</div>
-                <div className="mt-1 text-xs leading-5 text-muted-foreground">{isZh ? "GM 给选项，点着推进" : "Pick from offered actions"}</div>
+                <div className="text-sm font-medium text-foreground">{tr("点着玩", "Choices", "선택형")}</div>
+                <div className="mt-1 text-xs leading-5 text-muted-foreground">{tr("GM 给选项，点着推进", "Pick from offered actions", "GM이 주는 선택지를 눌러 진행합니다")}</div>
               </button>
               <button
                 type="button"
                 onClick={() => { if (activeSessionId) setSessionPlayMode(activeSessionId, "open"); }}
                 className="w-40 rounded-xl border border-border/50 bg-secondary/30 px-4 py-3 text-left transition-all hover:border-primary/40 hover:bg-primary/5"
               >
-                <div className="text-sm font-medium text-foreground">{isZh ? "自由玩" : "Free"}</div>
-                <div className="mt-1 text-xs leading-5 text-muted-foreground">{isZh ? "自己打字，想干嘛干嘛" : "Type anything you want"}</div>
+                <div className="text-sm font-medium text-foreground">{tr("自由玩", "Free", "자유형")}</div>
+                <div className="mt-1 text-xs leading-5 text-muted-foreground">{tr("自己打字，想干嘛干嘛", "Type anything you want", "원하는 행동을 직접 입력합니다")}</div>
               </button>
             </div>
           </div>
@@ -1005,7 +1018,7 @@ export function ChatPage({ activeBookId, activeWorkId, workProfileId, mode = act
               <Message from="assistant">
                 <MessageContent>
                   <Shimmer className="text-sm" duration={1.5}>
-                    {isZh ? "思考中..." : "Thinking..."}
+                    {tr("思考中...", "Thinking...", "생각하는 중...")}
                   </Shimmer>
                 </MessageContent>
               </Message>
@@ -1022,7 +1035,6 @@ export function ChatPage({ activeBookId, activeWorkId, workProfileId, mode = act
             <QuickActions
               onAction={handleQuickAction}
               disabled={loading || !activeSessionId}
-              isZh={isZh}
             />
           </div>
         </div>
@@ -1036,7 +1048,6 @@ export function ChatPage({ activeBookId, activeWorkId, workProfileId, mode = act
           <PlayChoicePanel
             choices={playChoices}
             disabled={loading || !activeSessionId}
-            isZh={isZh}
             onChoose={(action) => {
               if (!activeSessionId || !playChoiceSet) return;
               setConsumedPlayChoiceKey(playChoiceSet.key);
@@ -1060,7 +1071,7 @@ export function ChatPage({ activeBookId, activeWorkId, workProfileId, mode = act
               className="flex items-center gap-1.5 rounded-lg border border-border/50 bg-secondary/30 px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
             >
               <RotateCcw size={14} />
-              {isZh ? "重试上一条消息" : "Retry last message"}
+              {tr("重试上一条消息", "Retry last message", "마지막 메시지 다시 보내기")}
             </button>
           </div>
         </div>
@@ -1072,7 +1083,6 @@ export function ChatPage({ activeBookId, activeWorkId, workProfileId, mode = act
             <div className="relative flex-1 rounded-xl bg-secondary/30 transition-all">
               {skillPanelOpen ? (
                 <SkillPickerPanel
-                  isZh={isZh}
                   skills={availableSkills}
                   diagnostics={skillsData?.diagnostics}
                   selectedSkillIds={selectedSkillIds}
@@ -1107,7 +1117,7 @@ export function ChatPage({ activeBookId, activeWorkId, workProfileId, mode = act
                         type="button"
                         onClick={() => setSelectedSkillIds((prev) => prev.filter((id) => id !== skill.id))}
                         className="rounded-full p-0.5 hover:bg-primary/20"
-                        aria-label={isZh ? `移除 ${skill.name}` : `Remove ${skill.name}`}
+                        aria-label={tr(`移除 ${skill.name}`, `Remove ${skill.name}`, `${skill.name} 제거`)}
                       >
                         <X size={12} />
                       </button>
@@ -1131,7 +1141,7 @@ export function ChatPage({ activeBookId, activeWorkId, workProfileId, mode = act
                             type="button"
                             onClick={() => setAttachedFiles((prev) => prev.filter((item) => item !== file))}
                             className="rounded-full p-0.5 hover:bg-muted"
-                            aria-label={isZh ? `移除 ${file.name}` : `Remove ${file.name}`}
+                            aria-label={tr(`移除 ${file.name}`, `Remove ${file.name}`, `${file.name} 제거`)}
                           >
                             <X size={12} />
                           </button>
@@ -1150,8 +1160,8 @@ export function ChatPage({ activeBookId, activeWorkId, workProfileId, mode = act
                   onClick={() => setSkillPanelOpen((value) => !value)}
                   disabled={loading || !activeSessionId}
                   className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border/50 transition-colors disabled:opacity-30 ${skillPanelOpen || selectedSkillIds.length > 0 ? "bg-primary/10 text-primary" : "text-muted-foreground hover:border-primary/40 hover:text-primary"}`}
-                  title={isZh ? "添加 Skill" : "Add skill"}
-                  aria-label={isZh ? "添加 Skill" : "Add skill"}
+                  title={tr("添加 Skill", "Add skill", "스킬 추가")}
+                  aria-label={tr("添加 Skill", "Add skill", "스킬 추가")}
                 >
                   <Plus size={16} strokeWidth={2.4} />
                 </button>
@@ -1160,8 +1170,8 @@ export function ChatPage({ activeBookId, activeWorkId, workProfileId, mode = act
                   onClick={() => fileInputRef.current?.click()}
                   disabled={!activeSessionId}
                   className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border/50 text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary disabled:opacity-30"
-                  title={isZh ? "上传图片或资料" : "Attach files"}
-                  aria-label={isZh ? "上传图片或资料" : "Attach files"}
+                  title={tr("上传图片或资料", "Attach files", "이미지·자료 첨부")}
+                  aria-label={tr("上传图片或资料", "Attach files", "이미지·자료 첨부")}
                 >
                   <Paperclip size={16} strokeWidth={2.3} />
                 </button>
@@ -1170,7 +1180,7 @@ export function ChatPage({ activeBookId, activeWorkId, workProfileId, mode = act
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void onSend(input); } }}
-                  placeholder={isZh ? "输入指令..." : "Enter command..."}
+                  placeholder={tr("输入指令...", "Enter command...", "지시 입력...")}
                   disabled={!activeSessionId || !sessionMatchesRoute || creatingWorkSession}
                   rows={1}
                   className="flex-1 bg-transparent text-base leading-7 placeholder:text-muted-foreground/50 outline-none! border-none! ring-0! shadow-none focus:outline-none! focus:ring-0! focus:border-none! resize-none disabled:opacity-50 max-h-[200px] overflow-y-auto"
@@ -1180,7 +1190,7 @@ export function ChatPage({ activeBookId, activeWorkId, workProfileId, mode = act
                   onClick={() => void onSend(input)}
                   disabled={(!input.trim() && attachedFiles.length === 0 && !loading) || !activeSessionId || !sessionMatchesRoute || creatingWorkSession}
                   className="w-8 h-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center shrink-0 hover:scale-105 active:scale-95 transition-all disabled:opacity-20 disabled:scale-100 shadow-sm shadow-primary/20"
-                  title={loading && !input.trim() && attachedFiles.length === 0 ? (isZh ? "停止当前回复" : "Stop") : undefined}
+                  title={loading && !input.trim() && attachedFiles.length === 0 ? tr("停止当前回复", "Stop", "응답 중지") : undefined}
                 >
                   {loading && !input.trim() && attachedFiles.length === 0
                     ? <Square size={13} fill="currentColor" />
@@ -1189,7 +1199,7 @@ export function ChatPage({ activeBookId, activeWorkId, workProfileId, mode = act
               </div>
               <div className="flex items-center gap-2 px-3 pb-2 border-t border-border/20 pt-1.5">
                 {modelPickerStatus === "loading" ? (
-                  <span className="text-[15px] text-muted-foreground/40 animate-pulse">{isZh ? "加载模型..." : "Loading models..."}</span>
+                  <span className="text-[15px] text-muted-foreground/40 animate-pulse">{tr("加载模型...", "Loading models...", "모델 불러오는 중...")}</span>
                 ) : modelPickerStatus === "ready" ? (
                   <DropdownMenu>
                     <DropdownMenuTrigger className="flex items-center gap-1.5 px-2 py-1.5 rounded-md hover:bg-muted text-[16px] transition-colors cursor-pointer">
@@ -1211,7 +1221,7 @@ export function ChatPage({ activeBookId, activeWorkId, workProfileId, mode = act
                     onClick={() => nav.toServices()}
                     className="text-[15px] text-muted-foreground/50 hover:text-primary transition-colors"
                   >
-                    {isZh ? "配置模型 →" : "Set up models →"}
+                    {tr("配置模型 →", "Set up models →", "모델 설정 →")}
                   </button>
                 )}
                 {isPlaySurface && (
@@ -1219,10 +1229,10 @@ export function ChatPage({ activeBookId, activeWorkId, workProfileId, mode = act
                     type="button"
                     onClick={() => setWorldPanelOpen((v) => !v)}
                     className={`ml-auto flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[16px] font-medium transition-colors ${worldPanelOpen ? "bg-primary/15 text-primary" : "text-muted-foreground hover:bg-muted hover:text-primary"}`}
-                    title={isZh ? "查看世界：持有 / 状态 / 关系" : "View world: holdings / state / relations"}
+                    title={tr("查看世界：持有 / 状态 / 关系", "View world: holdings / state / relations", "세계 보기: 소지품 / 상태 / 관계")}
                   >
                     <Gamepad2 size={18} />
-                    {isZh ? "查看世界" : "View World"}
+                    {tr("查看世界", "View World", "세계 보기")}
                   </button>
                 )}
               </div>
@@ -1233,22 +1243,22 @@ export function ChatPage({ activeBookId, activeWorkId, workProfileId, mode = act
                   type="button"
                   onClick={() => setPlayImageMenuOpen((value) => !value)}
                   disabled={loading || !activeSessionId}
-                  title={isZh ? "自动配图" : "Auto illustration"}
+                  title={tr("自动配图", "Auto illustration", "자동 삽화")}
                   className={`flex h-10 w-10 items-center justify-center rounded-xl border border-border/50 bg-secondary/40 shadow-sm transition-all hover:border-primary/50 hover:bg-primary/10 hover:text-primary active:scale-95 disabled:cursor-not-allowed disabled:opacity-30 ${playImageMenuOpen || playImageSettings.actors || playImageSettings.moments || playImageSettings.inventory ? "text-primary" : "text-muted-foreground"}`}
-                  aria-label={isZh ? "自动配图" : "Auto illustration"}
+                  aria-label={tr("自动配图", "Auto illustration", "자동 삽화")}
                 >
                   <Palette size={17} />
                 </button>
                 {playImageMenuOpen ? (
                   <div className="absolute bottom-12 right-0 z-30 w-44 rounded-xl border border-border/50 bg-card/95 p-2 shadow-xl backdrop-blur">
                     <div className="mb-1.5 px-1 text-[12px] leading-5 font-semibold uppercase tracking-wider text-muted-foreground/60">
-                      {isZh ? "自动配图" : "Auto illustration"}
+                      {tr("自动配图", "Auto illustration", "자동 삽화")}
                     </div>
                     {(["actors", "moments", "inventory"] as const).map((key) => (
                       <label
                         key={key}
                         className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-[14px] leading-6 ${playImageCoverReady ? "cursor-pointer text-foreground hover:bg-secondary/50" : "cursor-not-allowed text-muted-foreground/40"}`}
-                        title={playImageCoverReady ? undefined : (isZh ? "先在「模型配置」里配好生图 API 才能开启" : "Configure an image API in Model Settings first")}
+                        title={playImageCoverReady ? undefined : tr("先在「模型配置」里配好生图 API 才能开启", "Configure an image API in Model Settings first", "먼저 「모델 설정」에서 이미지 생성 API를 설정해야 켤 수 있습니다")}
                       >
                         <input
                           type="checkbox"
@@ -1258,15 +1268,15 @@ export function ChatPage({ activeBookId, activeWorkId, workProfileId, mode = act
                           className="h-4 w-4 accent-primary"
                         />
                         {key === "actors"
-                          ? (isZh ? "为角色配图" : "Characters")
+                          ? tr("为角色配图", "Characters", "등장인물 삽화")
                           : key === "moments"
-                            ? (isZh ? "为时刻配图" : "Moments")
-                            : (isZh ? "为背包配图" : "Inventory")}
+                            ? tr("为时刻配图", "Moments", "장면 삽화")
+                            : tr("为背包配图", "Inventory", "소지품 삽화")}
                       </label>
                     ))}
                     {!playImageCoverReady ? (
                       <p className="mt-1 px-1 text-[12px] leading-5 text-muted-foreground/50">
-                        {isZh ? "未检测到生图 API。" : "No image API configured."}
+                        {tr("未检测到生图 API。", "No image API configured.", "이미지 생성 API가 설정되지 않았습니다.")}
                       </p>
                     ) : null}
                   </div>
@@ -1276,7 +1286,7 @@ export function ChatPage({ activeBookId, activeWorkId, workProfileId, mode = act
           </div>
           {playImageError ? (
             <p className="mt-2 text-right text-[13px] leading-5 text-destructive/80">
-              {isZh ? `配图失败：${playImageError}` : `Image failed: ${playImageError}`}
+              {tr(`配图失败：${playImageError}`, `Image failed: ${playImageError}`, `삽화 생성 실패: ${playImageError}`)}
             </p>
           ) : null}
         </div>
@@ -1287,7 +1297,6 @@ export function ChatPage({ activeBookId, activeWorkId, workProfileId, mode = act
         <PlayHud
           sessionId={playWorldId}
           isStreaming={loading}
-          isZh={isZh}
           open={worldPanelOpen}
           onClose={() => setWorldPanelOpen(false)}
           imageSettings={playImageSettings}
@@ -1322,7 +1331,7 @@ function ModelPickerContent({
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="搜索模型..."
+          placeholder={tr("搜索模型...", "Search models...", "모델 검색...")}
           className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground/40"
           onClick={(e) => e.stopPropagation()}
           onKeyDown={(e) => e.stopPropagation()}
@@ -1353,13 +1362,13 @@ function ModelPickerContent({
         ))}
         {filtered.length === 0 && (
           <div className="px-3 py-4 text-xs text-muted-foreground/50 text-center italic">
-            无匹配模型
+            {tr("无匹配模型", "No matching models", "일치하는 모델이 없습니다")}
           </div>
         )}
       </div>
       <div className="border-t border-border/30">
         <DropdownMenuItem onClick={onManage} className="text-primary">
-          管理服务商
+          {tr("管理服务商", "Manage providers", "서비스 관리")}
         </DropdownMenuItem>
       </div>
     </DropdownMenuContent>

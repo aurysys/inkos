@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import type { Theme } from "../hooks/use-theme";
 import type { TFunction } from "../hooks/use-i18n";
 import { useColors } from "../hooks/use-colors";
+import { tr } from "../lib/app-language";
 import type { SSEMessage } from "../hooks/use-sse";
 import { shouldRefetchDaemonStatus } from "../hooks/use-book-activity";
 
@@ -31,7 +32,7 @@ export function DaemonControl({ nav, theme, t, sse }: { nav: Nav; theme: Theme; 
       await postApi("/daemon/start");
       refetch();
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Failed");
+      alert(e instanceof Error ? e.message : tr("操作失败", "Failed", "작업에 실패했습니다"));
     } finally {
       setLoading(false);
     }
@@ -43,7 +44,7 @@ export function DaemonControl({ nav, theme, t, sse }: { nav: Nav; theme: Theme; 
       await postApi("/daemon/stop");
       refetch();
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Failed");
+      alert(e instanceof Error ? e.message : tr("操作失败", "Failed", "작업에 실패했습니다"));
     } finally {
       setLoading(false);
     }

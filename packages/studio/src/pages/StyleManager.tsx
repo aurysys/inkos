@@ -3,6 +3,7 @@ import { fetchJson, useApi, postApi } from "../hooks/use-api";
 import type { Theme } from "../hooks/use-theme";
 import type { TFunction } from "../hooks/use-i18n";
 import { useColors } from "../hooks/use-colors";
+import { tr } from "../lib/app-language";
 import { Wand2, Upload, BarChart3 } from "lucide-react";
 
 interface StyleProfile {
@@ -50,10 +51,10 @@ export function StyleManager({ nav, theme, t }: { nav: Nav; theme: Theme; t: TFu
 
   const handleImport = async () => {
     if (!importBookId || !text.trim()) return;
-    setStatusNotice({ tone: "info", message: "Importing..." });
+    setStatusNotice({ tone: "info", message: tr("导入中...", "Importing...", "가져오는 중...") });
     try {
       await postApi(`/books/${importBookId}/style/import`, { text, sourceName: sourceName || "sample" });
-      setStatusNotice({ tone: "success", message: "Style guide imported successfully!" });
+      setStatusNotice({ tone: "success", message: tr("文风指南导入成功！", "Style guide imported successfully!", "문체 가이드를 가져왔습니다.") });
     } catch (e) {
       setStatusNotice({ tone: "error", message: e instanceof Error ? e.message : String(e) });
     }

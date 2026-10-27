@@ -1,6 +1,6 @@
 // Reader-facing labels and projections for canonical Work truth artifacts.
 
-import { getAppLanguage, tr } from "./app-language";
+import { tr } from "./app-language";
 
 // First non-empty prose paragraph of a body, for an at-a-glance overview. A
 // leading markdown heading on the paragraph is dropped so the glance is prose.
@@ -45,13 +45,21 @@ const FOUNDATION_FILE_LABELS_EN: Record<string, string> = {
   "book_rules.md": "Narrative Rules",
 };
 
+const FOUNDATION_FILE_LABELS_KO: Record<string, string> = {
+  "outline/story_frame.md": "이야기 기본 설정",
+  "outline/volume_map.md": "권별 개요",
+  "current_state.md": "현재 상태",
+  "pending_hooks.md": "복선 목록",
+  "book_rules.md": "서술 규칙",
+};
+
 // Language-aware display label for a foundation truth file. Returns undefined
 // for files that are not part of the foundation list (same qualification as
 // FOUNDATION_FILE_LABELS).
 export function foundationFileLabel(name: string): string | undefined {
   const zh = FOUNDATION_FILE_LABELS[name];
   if (zh === undefined) return undefined;
-  return getAppLanguage() === "en" ? FOUNDATION_FILE_LABELS_EN[name] ?? zh : zh;
+  return tr(zh, FOUNDATION_FILE_LABELS_EN[name] ?? zh, FOUNDATION_FILE_LABELS_KO[name]);
 }
 
 // --- current_state.md ---------------------------------------------------

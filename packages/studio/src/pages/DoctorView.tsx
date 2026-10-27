@@ -2,6 +2,7 @@ import { useApi } from "../hooks/use-api";
 import type { Theme } from "../hooks/use-theme";
 import type { TFunction } from "../hooks/use-i18n";
 import { useColors } from "../hooks/use-colors";
+import { tr } from "../lib/app-language";
 import { Stethoscope, CheckCircle2, XCircle, Loader2 } from "lucide-react";
 
 interface DoctorChecks {
@@ -60,7 +61,7 @@ export function DoctorView({ nav, theme, t }: { nav: Nav; theme: Theme; t: TFunc
           <CheckRow label={t("doctor.inkosJson")} ok={data.inkosJson} />
           <CheckRow label={t("doctor.projectEnv")} ok={data.projectEnv} />
           <CheckRow label={t("doctor.globalEnv")} ok={data.globalEnv} />
-          <CheckRow label={t("doctor.booksDir")} ok={data.booksDir} detail={`${data.bookCount} book(s)`} />
+          <CheckRow label={t("doctor.booksDir")} ok={data.booksDir} detail={tr(`${data.bookCount} 本书`, `${data.bookCount} book(s)`, `책 ${data.bookCount}권`)} />
           <CheckRow label={t("doctor.llmApi")} ok={data.llmConnected} detail={data.llmConnected ? t("doctor.connected") : t("doctor.failed")} />
         </div>
       )}

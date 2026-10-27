@@ -1,6 +1,7 @@
 import { access, cp, mkdir, readdir, rm, stat } from "node:fs/promises";
 import { join } from "node:path";
 import { workDirectory } from "@actalk/inkos-core";
+import { uiText } from "./ui-locale.js";
 
 export interface BookBackupInfo {
   readonly id: string;
@@ -44,7 +45,7 @@ export async function createBookBackup(
   const bookDir = workDirectory(root, bookId);
   const bookInfo = await stat(bookDir).catch(() => null);
   if (!bookInfo?.isDirectory()) {
-    throw new Error(`Book Work not found: ${bookId}.`);
+    throw new Error(uiText(`Book Work not found: ${bookId}.`, `책 작품을 찾을 수 없습니다: ${bookId}`));
   }
 
   const backupsDir = bookBackupsDir(root, bookId);
@@ -95,16 +96,21 @@ export async function restoreBookBackup(
   // backupId comes from CLI input and is joined into a path — keep it a single
   // safe path component.
   if (!/^[A-Za-z0-9._-]+$/.test(backupId) || backupId === "." || backupId === "..") {
-    throw new Error(`Invalid backup id "${backupId}": a backup id must be a single directory name.`);
+    throw new Error(uiText(
+      `Invalid backup id "${backupId}": a backup id must be a single directory name.`,
+      `잘못된 백업 ID "${backupId}": 백업 ID는 디렉터리 이름 하나여야 합니다.`,
+    ));
   }
 
   const backupPath = join(bookBackupsDir(root, bookId), backupId);
   const backupInfo = await stat(backupPath).catch(() => null);
   if (!backupInfo?.isDirectory()) {
-    throw new Error(
+    throw new Error(uiText(
       `Backup "${backupId}" not found for book "${bookId}". `
       + `List available backups with: inkos book backup ${bookId} --list`,
-    );
+      `책 "${bookId}"에서 백업 "${backupId}"을(를) 찾을 수 없습니다. `
+      + `사용 가능한 백업 목록은 다음 명령으로 확인하세요: inkos book backup ${bookId} --list`,
+    ));
   }
 
   const bookDir = workDirectory(root, bookId);

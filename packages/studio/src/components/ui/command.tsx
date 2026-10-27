@@ -2,6 +2,7 @@ import * as React from "react"
 import { Command as CommandPrimitive } from "cmdk"
 
 import { cn } from "@/lib/utils"
+import { tr } from "../../lib/app-language"
 import {
   Dialog,
   DialogContent,
@@ -32,8 +33,8 @@ function Command({
 }
 
 function CommandDialog({
-  title = "Command Palette",
-  description = "Search for a command to run...",
+  title = tr("命令面板", "Command Palette", "명령 팔레트"),
+  description = tr("搜索要运行的命令…", "Search for a command to run...", "실행할 명령을 검색하세요..."),
   children,
   className,
   showCloseButton = false,

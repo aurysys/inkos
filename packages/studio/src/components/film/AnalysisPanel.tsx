@@ -51,10 +51,10 @@ function IssuesList({ report, c }: { report: AnalysisReport; c: Colors }) {
   return (
     <div className="border border-border rounded p-3" data-testid="validation-panel">
       <div className={`text-sm font-medium ${c.muted}`}>
-        {tr("校验", "Validation")}{report.ok ? "" : tr("（有阻断问题）", " (blocking issues)")}
+        {tr("校验", "Validation", "검증")}{report.ok ? "" : tr("（有阻断问题）", " (blocking issues)", " (차단 문제 있음)")}
       </div>
       {report.issues.length === 0 ? (
-        <div className={`text-sm mt-1 ${c.muted}`}>{tr("无问题", "No issues")}</div>
+        <div className={`text-sm mt-1 ${c.muted}`}>{tr("无问题", "No issues", "문제 없음")}</div>
       ) : (
         <ul className="mt-1 space-y-1">
           {report.issues.map((issue, i) => (
@@ -88,16 +88,16 @@ function PathDistributionPanel({
 
   return (
     <div data-testid="path-distribution" className="border border-border rounded p-3">
-      <div className={`text-sm font-medium mb-2 ${c.muted}`}>{tr("路径分布", "Path distribution")}</div>
+      <div className={`text-sm font-medium mb-2 ${c.muted}`}>{tr("路径分布", "Path distribution", "경로 분포")}</div>
 
       {distribution.truncated && (
         <div className={`text-xs mb-2 ${c.muted}`}>
-          {tr(`路径过多，仅统计前 ${distribution.total} 条`, `Too many paths; only the first ${distribution.total} are counted`)}
+          {tr(`路径过多，仅统计前 ${distribution.total} 条`, `Too many paths; only the first ${distribution.total} are counted`, `경로가 너무 많아 처음 ${distribution.total}개만 집계했습니다`)}
         </div>
       )}
 
       {endingEntries.length === 0 ? (
-        <div className={`text-sm ${c.muted}`}>{tr("暂无路径数据", "No path data")}</div>
+        <div className={`text-sm ${c.muted}`}>{tr("暂无路径数据", "No path data", "경로 데이터가 없습니다")}</div>
       ) : (
         <div className="space-y-1.5 mb-4">
           {endingEntries.map(([endingId, count]) => {
@@ -127,7 +127,7 @@ function PathDistributionPanel({
 
       {histEntries.length > 0 && (
         <div>
-          <div className={`text-xs font-medium mb-2 ${c.muted}`}>{tr("路径长度分布", "Path length distribution")}</div>
+          <div className={`text-xs font-medium mb-2 ${c.muted}`}>{tr("路径长度分布", "Path length distribution", "경로 길이 분포")}</div>
           <div className="flex items-end gap-1 h-12">
             {histEntries.map(({ len, count }) => {
               const heightPct = (count / maxHistCount) * 100;
@@ -139,7 +139,7 @@ function PathDistributionPanel({
                   <div
                     className="w-full bg-primary/50 rounded-t"
                     style={{ height: `${heightPct}%` }}
-                    title={tr(`长度 ${len}: ${count} 条`, `Length ${len}: ${count} paths`)}
+                    title={tr(`长度 ${len}: ${count} 条`, `Length ${len}: ${count} paths`, `길이 ${len}: 경로 ${count}개`)}
                   />
                   <span className={`text-xs leading-none ${c.muted}`}>{len}</span>
                 </div>
@@ -169,15 +169,15 @@ export function AnalysisPanel({
   );
 
   if (loading) {
-    return <div className={`p-4 text-sm ${c.muted}`}>{tr("正在加载分析结果…", "Loading analysis…")}</div>;
+    return <div className={`p-4 text-sm ${c.muted}`}>{tr("正在加载分析结果…", "Loading analysis…", "분석 결과를 불러오는 중…")}</div>;
   }
 
   if (error) {
-    return <div className="p-4 text-sm text-destructive">{tr("加载失败：", "Load failed: ")}{error}</div>;
+    return <div className="p-4 text-sm text-destructive">{tr("加载失败：", "Load failed: ", "불러오기 실패: ")}{error}</div>;
   }
 
   if (!data) {
-    return <div className={`p-4 text-sm ${c.muted}`}>{tr("暂无分析数据", "No analysis data")}</div>;
+    return <div className={`p-4 text-sm ${c.muted}`}>{tr("暂无分析数据", "No analysis data", "분석 데이터가 없습니다")}</div>;
   }
 
   return (

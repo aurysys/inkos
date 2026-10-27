@@ -1,6 +1,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { createRequire } from "node:module";
+import { uiText } from "./ui-locale.js";
 
 const require = createRequire(import.meta.url);
 
@@ -42,14 +43,20 @@ export async function inspectNodeRuntimePinFiles(root: string): Promise<NodeRunt
   if (missing.length === 0) {
     return {
       ok: true,
-      detail: `Pinned to Node ${NODE_PIN_VERSION} via ${NODE_PIN_FILES.join(", ")}.`,
+      detail: uiText(
+        `Pinned to Node ${NODE_PIN_VERSION} via ${NODE_PIN_FILES.join(", ")}.`,
+        `${NODE_PIN_FILES.join(", ")} 파일에 Node ${NODE_PIN_VERSION} 버전이 고정되어 있습니다.`,
+      ),
       missing,
     };
   }
 
   return {
     ok: false,
-    detail: `Missing or outdated: ${missing.join(", ")}. Run 'inkos doctor --repair-node-runtime'.`,
+    detail: uiText(
+      `Missing or outdated: ${missing.join(", ")}. Run 'inkos doctor --repair-node-runtime'.`,
+      `없거나 오래된 파일: ${missing.join(", ")}. 'inkos doctor --repair-node-runtime'을 실행하세요.`,
+    ),
     missing,
   };
 }
@@ -103,7 +110,10 @@ export function evaluateNodeRuntimeSupport(options?: {
   if (major < MIN_NODE_MAJOR || (major === MIN_NODE_MAJOR && minor < 16)) {
     return {
       ok: false,
-      detail: `Unsupported runtime ${nodeVersion}. InkOS requires Node ${MIN_NODE_VERSION}+.`,
+      detail: uiText(
+        `Unsupported runtime ${nodeVersion}. InkOS requires Node ${MIN_NODE_VERSION}+.`,
+        `지원하지 않는 런타임입니다: ${nodeVersion}. InkOS에는 Node ${MIN_NODE_VERSION} 이상이 필요합니다.`,
+      ),
     };
   }
 
@@ -111,12 +121,15 @@ export function evaluateNodeRuntimeSupport(options?: {
   if (!hasNodeSqlite) {
     return {
       ok: false,
-      detail: `${nodeVersion} detected, but the required node:sqlite APIs are unavailable.`,
+      detail: uiText(
+        `${nodeVersion} detected, but the required node:sqlite APIs are unavailable.`,
+        `${nodeVersion}을(를) 감지했지만 필요한 node:sqlite API를 사용할 수 없습니다.`,
+      ),
     };
   }
 
   return {
     ok: true,
-    detail: `Available on ${nodeVersion}.`,
+    detail: uiText(`Available on ${nodeVersion}.`, `${nodeVersion}에서 사용할 수 있습니다.`),
   };
 }

@@ -45,16 +45,16 @@ export type ToolHeaderProps = {
     }
 );
 
-// [zh, en] tuples resolved through tr() at render time so the badge follows
+// [zh, en, ko] tuples resolved through tr() at render time so the badge follows
 // the current app language instead of the language active at module load.
-const statusLabels: Record<ToolPart["state"], readonly [string, string]> = {
-  "approval-requested": ["等待确认", "Awaiting approval"],
-  "approval-responded": ["已响应", "Responded"],
-  "input-available": ["执行中", "Running"],
-  "input-streaming": ["处理中", "Processing"],
-  "output-available": ["已完成", "Completed"],
-  "output-denied": ["已拒绝", "Denied"],
-  "output-error": ["出错", "Error"],
+const statusLabels: Record<ToolPart["state"], readonly [string, string, string]> = {
+  "approval-requested": ["等待确认", "Awaiting approval", "확인 대기 중"],
+  "approval-responded": ["已响应", "Responded", "응답함"],
+  "input-available": ["执行中", "Running", "실행 중"],
+  "input-streaming": ["处理中", "Processing", "처리 중"],
+  "output-available": ["已完成", "Completed", "완료"],
+  "output-denied": ["已拒绝", "Denied", "거부됨"],
+  "output-error": ["出错", "Error", "오류"],
 };
 
 const statusIcons: Record<ToolPart["state"], ReactNode> = {
@@ -70,7 +70,7 @@ const statusIcons: Record<ToolPart["state"], ReactNode> = {
 export const getStatusBadge = (status: ToolPart["state"]) => (
   <Badge className="gap-1.5 rounded-full text-xs" variant="secondary">
     {statusIcons[status]}
-    {tr(statusLabels[status][0], statusLabels[status][1])}
+    {tr(statusLabels[status][0], statusLabels[status][1], statusLabels[status][2])}
   </Badge>
 );
 
@@ -122,7 +122,7 @@ export type ToolInputProps = ComponentProps<"div"> & {
 export const ToolInput = ({ className, input, ...props }: ToolInputProps) => (
   <div className={cn("space-y-2 overflow-hidden", className)} {...props}>
     <h4 className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
-      Parameters
+      {tr("参数", "Parameters", "매개변수")}
     </h4>
     <div className="rounded-md bg-muted/50">
       <CodeBlock code={JSON.stringify(input, null, 2)} language="json" />
@@ -158,7 +158,7 @@ export const ToolOutput = ({
   return (
     <div className={cn("space-y-2", className)} {...props}>
       <h4 className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
-        {errorText ? "Error" : "Result"}
+        {errorText ? tr("错误", "Error", "오류") : tr("结果", "Result", "결과")}
       </h4>
       <div
         className={cn(

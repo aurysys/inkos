@@ -70,6 +70,13 @@ export const KIND_LABEL_ZH: Record<string, string> = {
 export const KIND_LABEL_EN: Record<string, string> = {
   item: "Item", evidence: "Evidence", clue: "Clue", claim: "Claim", proof_chain: "Proof chain",
 };
+export const KIND_LABEL_KO: Record<string, string> = {
+  item: "물건", evidence: "증거", clue: "단서", claim: "주장", proof_chain: "증거 사슬",
+};
+// Keyed by UI locale (getUiLocale()).
+export const KIND_LABELS: Readonly<Record<"zh" | "en" | "ko", Record<string, string>>> = {
+  zh: KIND_LABEL_ZH, en: KIND_LABEL_EN, ko: KIND_LABEL_KO,
+};
 
 // Mirrors core PlayEvidenceStatusSchema order (packages/core/src/models/play.ts:122-131).
 export const EVIDENCE_LADDER = [
@@ -82,4 +89,12 @@ export const LADDER_LABEL_ZH: Record<string, string> = {
 export const LADDER_LABEL_EN: Record<string, string> = {
   unknown: "Unknown", hinted: "Hinted", seen: "Seen", collected: "Collected",
   verified: "Verified", weaponized: "Weaponized", exposed: "Exposed", exhausted: "Exhausted",
+};
+export const LADDER_LABEL_KO: Record<string, string> = {
+  unknown: "미확인", hinted: "단서 있음", seen: "목격함", collected: "수집함",
+  verified: "검증됨", weaponized: "무기화", exposed: "폭로됨", exhausted: "소진됨",
+};
+// Keyed by UI locale (getUiLocale()).
+export const LADDER_LABELS: Readonly<Record<"zh" | "en" | "ko", Record<string, string>>> = {
+  zh: LADDER_LABEL_ZH, en: LADDER_LABEL_EN, ko: LADDER_LABEL_KO,
 };

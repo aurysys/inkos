@@ -2,7 +2,39 @@
 // useI18n hook，从这里读取。App.tsx 在项目配置加载/切换语言时调用 setAppLanguage 同步。
 export type AppLanguage = "zh" | "en";
 
+// 界面语言：与项目写作语言（AppLanguage）分离。"ko" 时界面固定为韩语，
+// 写作语言仍由项目配置决定；"follow" 时界面跟随项目写作语言（原有行为）。
+export type UiLocale = "ko" | AppLanguage;
+export type UiLocalePreference = "ko" | "follow";
+
+const UI_LOCALE_STORAGE_KEY = "inkos.uiLocale";
+
 let current: AppLanguage = "zh";
+let uiLocalePreference: UiLocalePreference = readStoredUiLocalePreference();
+
+function getUiLocaleStorage(): Storage | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
+/** 浏览器里默认韩语界面；无 window（Node 测试）时保持跟随项目语言。 */
+function readStoredUiLocalePreference(): UiLocalePreference {
+  if (typeof window === "undefined") {
+    return "follow";
+  }
+  try {
+    const stored = getUiLocaleStorage()?.getItem(UI_LOCALE_STORAGE_KEY);
+    return stored === "follow" ? "follow" : "ko";
+  } catch {
+    return "ko";
+  }
+}
 
 export function setAppLanguage(lang: AppLanguage): void {
   current = lang;
@@ -12,7 +44,36 @@ export function getAppLanguage(): AppLanguage {
   return current;
 }
 
-/** 内联双语：tr("中文", "English")。默认中文，保持既有测试与默认体验不变。 */
-export function tr(zh: string, en: string): string {
+export function getUiLocalePreference(): UiLocalePreference {
+  return uiLocalePreference;
+}
+
+export function setUiLocalePreference(preference: UiLocalePreference): void {
+  uiLocalePreference = preference;
+  try {
+    getUiLocaleStorage()?.setItem(UI_LOCALE_STORAGE_KEY, preference);
+  } catch {
+    // Storage may be unavailable (private mode); the in-memory preference still applies.
+  }
+}
+
+export function getUiLocale(): UiLocale {
+  return uiLocalePreference === "ko" ? "ko" : current;
+}
+
+/**
+ * 内联多语：tr("中文", "English", "한국어")。默认中文，保持既有测试与默认体验不变。
+ * 韩语界面缺少译文时回退到英文。
+ */
+export function tr(zh: string, en: string, ko?: string): string {
+  if (uiLocalePreference === "ko") return ko ?? en;
+  return current === "en" ? en : zh;
+}
+
+/**
+ * 按项目写作语言挑选的“内容”文案（发给 Agent 的消息、写入作品的默认文本），
+ * 不受界面语言影响。
+ */
+export function trContent(zh: string, en: string): string {
   return current === "en" ? en : zh;
 }

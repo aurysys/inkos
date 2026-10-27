@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Theme } from "../hooks/use-theme";
 import type { TFunction } from "../hooks/use-i18n";
+import { useI18n } from "../hooks/use-i18n";
+import { getUiLocale, tr } from "../lib/app-language";
 import { useColors } from "../hooks/use-colors";
 import { fetchJson, useApi } from "../hooks/use-api";
 import { Download, FileText, Languages, Loader2, Play, Upload } from "lucide-react";
@@ -75,10 +77,18 @@ interface TranslationExportResponse {
 function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onerror = () => reject(reader.error ?? new Error("Failed to read file"));
+    reader.onerror = () => reject(reader.error ?? new Error(tr("读取文件失败", "Failed to read file", "파일을 읽지 못했습니다")));
     reader.onload = () => resolve(String(reader.result ?? ""));
     reader.readAsDataURL(file);
   });
+}
+
+function segmentStats(segments: number, observations: number): string {
+  return tr(
+    `${segments} 段 · ${observations} 条观察`,
+    `${segments} segments · ${observations} observations`,
+    `단락 ${segments}개 · 검토 의견 ${observations}건`,
+  );
 }
 
 function formatFileSize(bytes: number): string {
@@ -107,6 +117,28 @@ const LANGUAGE_PRESETS_ZH = [
   "土耳其语",
 ] as const;
 
+// 预设值本身会作为 sourceLanguage/targetLanguage 发给翻译 Agent，按项目写作语言选用，不随界面语言变化。
+// 韩语界面只在 datalist 里额外显示下面的名称，按下标与预设一一对应。
+const LANGUAGE_PRESET_LABELS_KO = [
+  "자동 감지",
+  "중국어(간체)",
+  "중국어(번체)",
+  "영어",
+  "일본어",
+  "한국어",
+  "프랑스어",
+  "독일어",
+  "스페인어",
+  "포르투갈어",
+  "러시아어",
+  "아랍어",
+  "인도네시아어",
+  "베트남어",
+  "태국어",
+  "이탈리아어",
+  "튀르키예어",
+] as const;
+
 const LANGUAGE_PRESETS_EN = [
   "Auto detect",
   "Chinese (Simplified)",
@@ -129,8 +161,13 @@ const LANGUAGE_PRESETS_EN = [
 
 export function TranslationManager({ nav, theme, t }: { nav: Nav; theme: Theme; t: TFunction }) {
   const c = useColors(theme);
-  const isZh = t("nav.connected") === "已连接";
+  // 写作语言决定预设值（发给 Agent 的语言名），界面语言只影响展示文案。
+  const { lang } = useI18n();
+  const isZh = lang === "zh";
   const languagePresets = isZh ? LANGUAGE_PRESETS_ZH : LANGUAGE_PRESETS_EN;
+  const autoDetectPreset = languagePresets[0];
+  const presetLabel = (index: number): string | undefined =>
+    getUiLocale() === "ko" ? LANGUAGE_PRESET_LABELS_KO[index] : undefined;
   const { data, loading, error, refetch } = useApi<TranslationListResponse>("/translations");
   const [selectedId, setSelectedId] = useState("");
   const [detail, setDetail] = useState<TranslationDetailResponse | null>(null);
@@ -185,7 +222,7 @@ export function TranslationManager({ nav, theme, t }: { nav: Nav; theme: Theme; 
       });
       setUploaded(res);
       if (!title.trim()) setTitle(file.name.replace(/\.[^.]+$/u, ""));
-      setStatus({ tone: "success", message: isZh ? `已上传：${res.storedPath}` : `Uploaded: ${res.storedPath}` });
+      setStatus({ tone: "success", message: tr(`已上传：${res.storedPath}`, `Uploaded: ${res.storedPath}`, `업로드했습니다: ${res.storedPath}`) });
     } catch (err) {
       setStatus({ tone: "error", message: err instanceof Error ? err.message : String(err) });
     } finally {
@@ -210,7 +247,7 @@ export function TranslationManager({ nav, theme, t }: { nav: Nav; theme: Theme; 
         }),
       });
       setSelectedId(res.projectId);
-      setStatus({ tone: "success", message: isZh ? `已创建翻译项目：${res.title}` : `Created translation project: ${res.title}` });
+      setStatus({ tone: "success", message: tr(`已创建翻译项目：${res.title}`, `Created translation project: ${res.title}`, `번역 프로젝트를 만들었습니다: ${res.title}`) });
       await refetch();
     } catch (err) {
       setStatus({ tone: "error", message: err instanceof Error ? err.message : String(err) });
@@ -231,9 +268,11 @@ export function TranslationManager({ nav, theme, t }: { nav: Nav; theme: Theme; 
       });
       setStatus({
         tone: "success",
-        message: isZh
-          ? `翻译 ${res.translatedSegments} 段，审校 ${res.reviewedChapters} 章。${res.skillIds?.length ? `Skill：${res.skillIds.join(" · ")}。` : ""}报告：${res.reportPath}`
-          : `Translated ${res.translatedSegments} segments, reviewed ${res.reviewedChapters} chapters. ${res.skillIds?.length ? `Skills: ${res.skillIds.join(" · ")}. ` : ""}Report: ${res.reportPath}`,
+        message: tr(
+          `翻译 ${res.translatedSegments} 段，审校 ${res.reviewedChapters} 章。${res.skillIds?.length ? `Skill：${res.skillIds.join(" · ")}。` : ""}报告：${res.reportPath}`,
+          `Translated ${res.translatedSegments} segments, reviewed ${res.reviewedChapters} chapters. ${res.skillIds?.length ? `Skills: ${res.skillIds.join(" · ")}. ` : ""}Report: ${res.reportPath}`,
+          `단락 ${res.translatedSegments}개를 번역하고 챕터 ${res.reviewedChapters}개를 검토했습니다. ${res.skillIds?.length ? `스킬: ${res.skillIds.join(" · ")}. ` : ""}보고서: ${res.reportPath}`,
+        ),
       });
       await refetch();
       const updated = await fetchJson<TranslationDetailResponse>(`/translations/${encodeURIComponent(selected.projectId)}`);
@@ -256,7 +295,7 @@ export function TranslationManager({ nav, theme, t }: { nav: Nav; theme: Theme; 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ format }),
       });
-      setStatus({ tone: "success", message: isZh ? `已导出 ${format}: ${res.outputPath}` : `Exported ${format}: ${res.outputPath}` });
+      setStatus({ tone: "success", message: tr(`已导出 ${format}: ${res.outputPath}`, `Exported ${format}: ${res.outputPath}`, `${format} 파일로 내보냈습니다: ${res.outputPath}`) });
     } catch (err) {
       setStatus({ tone: "error", message: err instanceof Error ? err.message : String(err) });
     } finally {
@@ -339,11 +378,11 @@ export function TranslationManager({ nav, theme, t }: { nav: Nav; theme: Theme; 
               />
             </label>
             <datalist id="translation-source-language-options">
-              {languagePresets.map((language) => <option key={`source-${language}`} value={language} />)}
+              {languagePresets.map((language, index) => <option key={`source-${language}`} value={language} label={presetLabel(index)} />)}
             </datalist>
             <datalist id="translation-target-language-options">
-              {languagePresets.filter((language) => language !== (isZh ? "自动识别" : "Auto detect")).map((language) => (
-                <option key={`target-${language}`} value={language} />
+              {languagePresets.map((language, index) => (
+                language === autoDetectPreset ? null : <option key={`target-${language}`} value={language} label={presetLabel(index)} />
               ))}
             </datalist>
           </div>
@@ -428,7 +467,7 @@ export function TranslationManager({ nav, theme, t }: { nav: Nav; theme: Theme; 
                       className={`rounded-lg px-3 py-2 text-left text-sm transition-colors ${previewChapter?.number === chapter.number ? "bg-primary/10 ring-1 ring-primary/50" : "bg-secondary/30 hover:bg-secondary/50"}`}
                     >
                       <div className="font-medium">{chapter.title}</div>
-                      <div className="text-xs text-muted-foreground">{chapter.translatedSegments} segments · {chapter.observations?.length ?? 0} observations</div>
+                      <div className="text-xs text-muted-foreground">{segmentStats(chapter.translatedSegments, chapter.observations?.length ?? 0)}</div>
                     </button>
                   ))}
                 </div>
@@ -440,7 +479,7 @@ export function TranslationManager({ nav, theme, t }: { nav: Nav; theme: Theme; 
                       <div className="text-xs font-bold uppercase tracking-wide text-muted-foreground">{t("translation.preview")}</div>
                       <div className="font-semibold">{previewChapter.title}</div>
                     </div>
-                    <div className="text-xs text-muted-foreground">{previewChapter.translatedSegments} segments · {previewChapter.observations?.length ?? 0} observations</div>
+                    <div className="text-xs text-muted-foreground">{segmentStats(previewChapter.translatedSegments, previewChapter.observations?.length ?? 0)}</div>
                   </div>
                   <div className="max-h-[560px] overflow-auto rounded-xl border border-border bg-background/50">
                     {previewChapter.segments.map((segment) => (

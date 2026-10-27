@@ -277,7 +277,22 @@ export function formatResultCard(content: string, intent?: string): string {
 }
 
 export function intentToBadge(intent: string, locale: TuiLocale = resolveTuiLocale()): string {
-  const labels = locale === "en"
+  const labels = locale === "ko"
+    ? {
+        write_next: " 집필 ",
+        revise_chapter: " 수정 ",
+        rewrite_chapter: " 다시 쓰기 ",
+        update_focus: " 초점 ",
+        explain_status: " 상태 ",
+        explain_failure: " 디버그 ",
+        pause_book: " 일시정지 ",
+        list_books: " 책 ",
+        select_book: " 선택 ",
+        rename_entity: " 이름 변경 ",
+        patch_chapter_text: " 부분 수정 ",
+        edit_truth: " 설정 파일 ",
+      }
+    : locale === "en"
     ? {
         write_next: " WRITE ",
         revise_chapter: " REVISE ",
@@ -380,6 +395,39 @@ function formatElapsed(ms: number): string {
 }
 
 export function buildStyledHelpSections(locale: TuiLocale = resolveTuiLocale()): StyledHelpSection[] {
+  if (locale === "ko") {
+    return [
+      {
+        title: "집필",
+        commands: [
+          ["/write", "다음 챕터 쓰기(전체 파이프라인 실행)"],
+          ["/rewrite <n>", "N장을 처음부터 다시 쓰기"],
+        ],
+      },
+      {
+        title: "탐색",
+        commands: [
+          ["/books", "에이전트에게 책 목록 요청"],
+          ["/status", "현재 상태 보기"],
+        ],
+      },
+      {
+        title: "제어",
+        commands: [
+          ["/focus <text>", "현재 초점 업데이트"],
+        ],
+      },
+      {
+        title: "세션",
+        commands: [
+          ["/clear", "화면 지우기"],
+          ["/help", "도움말 보기"],
+          ["/quit", "InkOS TUI 종료"],
+        ],
+      },
+    ];
+  }
+
   if (locale === "en") {
     return [
       {
@@ -446,6 +494,13 @@ export function buildStyledHelpSections(locale: TuiLocale = resolveTuiLocale()):
 }
 
 function buildHelpFooter(locale: TuiLocale): { readonly title: string; readonly examples: readonly string[] } {
+  if (locale === "ko") {
+    return {
+      title: "작업을 실행하려면 슬래시 명령을 사용하세요:",
+      examples: ['"/write" "/rewrite 3" "/pause" "/rename 김철수 => 이영희"'],
+    };
+  }
+
   if (locale === "en") {
     return {
       title: "Use slash commands for actions:",
@@ -462,6 +517,19 @@ function buildHelpFooter(locale: TuiLocale): { readonly title: string; readonly 
 function localizeThemeLabel(label: string, locale: TuiLocale): string {
   if (locale === "en") {
     return label;
+  }
+
+  if (locale === "ko") {
+    const koLabels: Record<string, string> = {
+      thinking: "생각 중",
+      writing: "작성 중",
+      auditing: "검토 중",
+      revising: "수정 중",
+      planning: "계획 중",
+      composing: "생성 중",
+      loading: "불러오는 중",
+    };
+    return koLabels[label] ?? label;
   }
 
   const labels: Record<string, string> = {

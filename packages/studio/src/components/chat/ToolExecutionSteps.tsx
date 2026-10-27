@@ -30,28 +30,28 @@ function ExecStatusBadge({ status }: { status: ToolExecution["status"] }) {
       return (
         <span className="inline-flex items-center gap-1 text-xs text-primary">
           <Loader2 size={12} className="animate-spin" />
-          <span>{tr("执行中", "Running")}</span>
+          <span>{tr("执行中", "Running", "실행 중")}</span>
         </span>
       );
     case "processing":
       return (
         <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
           <Loader2 size={12} className="animate-spin" style={{ animationDuration: "2s" }} />
-          <span>{tr("处理结果", "Processing result")}</span>
+          <span>{tr("处理结果", "Processing result", "결과 처리 중")}</span>
         </span>
       );
     case "completed":
       return (
         <span className="inline-flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
           <CheckCircle2 size={12} />
-          <span>{tr("已完成", "Completed")}</span>
+          <span>{tr("已完成", "Completed", "완료")}</span>
         </span>
       );
     case "error":
       return (
         <span className="inline-flex items-center gap-1 text-xs text-destructive">
           <XCircle size={12} />
-          <span>{tr("失败", "Failed")}</span>
+          <span>{tr("失败", "Failed", "실패")}</span>
         </span>
       );
   }
@@ -68,11 +68,23 @@ function StageIcon({ status }: { status: PipelineStage["status"] }) {
   }
 }
 
+// zh/en 下 streaming/done/compressing 仍按原样显示，仅韩语界面翻译。
+function progressStatusLabel(status: string | undefined): string {
+  switch (status) {
+    case "thinking": return tr("思考中", "Thinking", "생각 중");
+    case "streaming": return tr(status, status, "스트리밍 중");
+    case "done": return tr(status, status, "완료");
+    case "compressing": return tr(status, status, "압축 중");
+    default: return status ?? "";
+  }
+}
+
 function formatProgress(progress: NonNullable<PipelineStage["progress"]>): string {
   const secs = Math.round(progress.elapsedMs / 1000);
-  const statusLabel = progress.status === "thinking" ? tr("思考中", "Thinking") : progress.status ?? "";
+  const statusLabel = progressStatusLabel(progress.status);
+  const charsLabel = progress.chineseChars > 0 ? `${progress.totalChars}字` : `${progress.totalChars} chars`;
   const chars = progress.totalChars > 0
-    ? progress.chineseChars > 0 ? `${progress.totalChars}字` : `${progress.totalChars} chars`
+    ? tr(charsLabel, charsLabel, `${progress.totalChars}자`)
     : "";
   const parts = [statusLabel, `${secs}s`, chars].filter(Boolean);
   return parts.join(" · ");
@@ -203,7 +215,7 @@ function SkillUsagePreview({ exec }: { exec: ToolExecution }) {
   if (skills.length === 0) return null;
   return (
     <div className="mx-3 mb-2 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-      <span className="font-semibold text-foreground/80">{tr("专业 Skill", "Professional skills")}</span>
+      <span className="font-semibold text-foreground/80">{tr("专业 Skill", "Professional skills", "전문 스킬")}</span>
       {skills.map((skill) => (
         <span key={skill} className="rounded-full border border-border/50 bg-background/60 px-2 py-0.5 font-mono text-[11px]">
           {skill}
@@ -279,28 +291,28 @@ function ChapterContextTracePreview({ exec }: { exec: ToolExecution }) {
   if (traces.length === 0) return null;
   return (
     <div className="mx-3 mb-3 mt-1 rounded-xl border border-border/50 bg-background/55 px-3 py-2.5 text-xs">
-      <div className="font-semibold text-foreground">{tr("本轮参考依据", "Context used this turn")}</div>
+      <div className="font-semibold text-foreground">{tr("本轮参考依据", "Context used this turn", "이번 턴 참고 자료")}</div>
       <div className="mt-2 space-y-2">
         {traces.map((trace) => (
           <details key={`${trace.chapterNumber ?? 0}:${trace.tracePath}`} className="rounded-lg border border-border/40 px-2.5 py-2">
             <summary className="cursor-pointer select-none font-medium text-foreground">
-              {trace.chapterNumber ? tr(`第 ${trace.chapterNumber} 章`, `Chapter ${trace.chapterNumber}`) : tr("章节", "Chapter")}
+              {trace.chapterNumber ? tr(`第 ${trace.chapterNumber} 章`, `Chapter ${trace.chapterNumber}`, `${trace.chapterNumber}장`) : tr("章节", "Chapter", "챕터")}
               {trace.retrievalEngine ? ` · ${trace.retrievalEngine}` : ""}
             </summary>
             <div className="mt-2 space-y-1.5 text-muted-foreground">
               <div>
-                {tr("预算", "Budget")}: {trace.totalSelectedTokens ?? 0}
-                {` · ${tr("保护", "protected")} ${trace.protectedTokens ?? 0}`}
-                {` · ${tr("可压缩", "compressible")} ${trace.compressibleTokens ?? 0}`}
+                {tr("预算", "Budget", "예산")}: {trace.totalSelectedTokens ?? 0}
+                {` · ${tr("保护", "protected", "보호")} ${trace.protectedTokens ?? 0}`}
+                {` · ${tr("可压缩", "compressible", "압축 가능")} ${trace.compressibleTokens ?? 0}`}
               </div>
               <div>
-                {tr("检索", "Retrieval")}: {trace.retrievalCandidateCount} {tr("个 BM25 候选", "BM25 candidates")}
-                {trace.semanticSelectedCount > 0 ? ` · ${trace.semanticSelectedCount} ${tr("个语义选择", "semantic selections")}` : ""}
+                {tr("检索", "Retrieval", "검색")}: {trace.retrievalCandidateCount} {tr("个 BM25 候选", "BM25 candidates", "개 BM25 후보")}
+                {trace.semanticSelectedCount > 0 ? ` · ${trace.semanticSelectedCount} ${tr("个语义选择", "semantic selections", "개 의미 기반 선택")}` : ""}
               </div>
               {trace.compressedSources.length > 0 && (
-                <div>{tr("语义压缩", "Semantic compaction")}: {trace.compressedSources.join(" · ")}</div>
+                <div>{tr("语义压缩", "Semantic compaction", "의미 기반 압축")}: {trace.compressedSources.join(" · ")}</div>
               )}
-              <div>{tr("完整来源", "All sources")}:</div>
+              <div>{tr("完整来源", "All sources", "전체 출처")}:</div>
               <ul className="space-y-0.5 font-mono text-[11px]">
                 {trace.selectedSources.map((source) => <li key={source}>{source}</li>)}
               </ul>
@@ -406,13 +418,13 @@ function ChapterRevisionPreview({ exec }: { exec: ToolExecution }) {
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="text-[15px] font-semibold text-foreground">
-          {details.chapterNumber ? tr(`第 ${details.chapterNumber} 章修订`, `Chapter ${details.chapterNumber} revision`) : tr("章节修订", "Chapter revision")}
+          {details.chapterNumber ? tr(`第 ${details.chapterNumber} 章修订`, `Chapter ${details.chapterNumber} revision`, `${details.chapterNumber}장 수정`) : tr("章节修订", "Chapter revision", "챕터 수정")}
         </div>
         <div className={`rounded-full px-2 py-0.5 text-[12px] font-semibold ${changed ? "bg-emerald-500/15 text-emerald-600" : "bg-secondary text-muted-foreground"}`}>
-          {changed ? tr("已更新", "Updated") : tr("无变化", "No change")}
+          {changed ? tr("已更新", "Updated", "업데이트됨") : tr("无变化", "No change", "변경 없음")}
         </div>
       </div>
-      <ChapterObservations observations={details.observations} title={tr("审查观察", "Review observations")} />
+      <ChapterObservations observations={details.observations} title={tr("审查观察", "Review observations", "검토 소견")} />
     </div>
   );
 }
@@ -427,14 +439,14 @@ function ChapterStateResyncPreview({ exec }: { exec: ToolExecution }) {
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="text-[15px] font-semibold text-foreground">
-          {details.chapterNumber ? tr(`第 ${details.chapterNumber} 章状态已同步`, `Chapter ${details.chapterNumber} state resynced`) : tr("章节状态已同步", "Chapter state resynced")}
+          {details.chapterNumber ? tr(`第 ${details.chapterNumber} 章状态已同步`, `Chapter ${details.chapterNumber} state resynced`, `${details.chapterNumber}장 상태 동기화됨`) : tr("章节状态已同步", "Chapter state resynced", "챕터 상태 동기화됨")}
         </div>
         <div className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[12px] font-semibold text-emerald-600">
-          {tr("已同步", "Synced")}
+          {tr("已同步", "Synced", "동기화됨")}
         </div>
       </div>
       {details.summary && <div className="mt-2 text-[13px] leading-5 text-muted-foreground">{details.summary}</div>}
-      <ChapterObservations observations={details.observations} title={tr("审查观察", "Review observations")} />
+      <ChapterObservations observations={details.observations} title={tr("审查观察", "Review observations", "검토 소견")} />
     </div>
   );
 }
@@ -482,14 +494,14 @@ function ScriptStoryboardResultPreview({ exec, onOpenFilmStudio }: { exec: ToolE
     && details.kind !== "interactive_film_created"
   )) return null;
   const maybeRows: Array<readonly [string, string] | null> = [
-    details.specPath ? [tr("规格", "Spec"), details.specPath] : null,
-    details.storyGraphPath ? [tr("剧情图谱", "Story graph"), details.storyGraphPath] : null,
-    details.storyTreePath ? [tr("剧情树", "Story tree"), details.storyTreePath] : null,
-    details.flagsPath ? [tr("变量旗标", "Flags"), details.flagsPath] : null,
-    details.scriptPath ? [tr("剧本", "Script"), details.scriptPath] : null,
-    details.storyboardPath ? [tr("分镜", "Storyboard"), details.storyboardPath] : null,
-    details.imagePromptsPath ? [tr("图像提示词", "Image prompts"), details.imagePromptsPath] : null,
-    details.assetsManifestPath ? [tr("图片资产", "Image assets"), details.assetsManifestPath] : null,
+    details.specPath ? [tr("规格", "Spec", "사양"), details.specPath] : null,
+    details.storyGraphPath ? [tr("剧情图谱", "Story graph", "스토리 그래프"), details.storyGraphPath] : null,
+    details.storyTreePath ? [tr("剧情树", "Story tree", "스토리 트리"), details.storyTreePath] : null,
+    details.flagsPath ? [tr("变量旗标", "Flags", "변수 플래그"), details.flagsPath] : null,
+    details.scriptPath ? [tr("剧本", "Script", "대본"), details.scriptPath] : null,
+    details.storyboardPath ? [tr("分镜", "Storyboard", "스토리보드"), details.storyboardPath] : null,
+    details.imagePromptsPath ? [tr("图像提示词", "Image prompts", "이미지 프롬프트"), details.imagePromptsPath] : null,
+    details.assetsManifestPath ? [tr("图片资产", "Image assets", "이미지 에셋"), details.assetsManifestPath] : null,
   ];
   const rows = maybeRows.filter((row): row is readonly [string, string] => Boolean(row));
   if (rows.length === 0 && !(details.kind === "interactive_film_created" && details.projectId)) return null;
@@ -498,10 +510,10 @@ function ScriptStoryboardResultPreview({ exec, onOpenFilmStudio }: { exec: ToolE
       <div className="flex items-center justify-between gap-3">
         <div className="text-[16px] leading-6 font-semibold text-primary">
           {details.kind === "script_created"
-            ? tr("剧本已生成", "Script generated")
+            ? tr("剧本已生成", "Script generated", "대본이 생성되었습니다")
             : details.kind === "storyboard_created"
-              ? tr("分镜已生成", "Storyboard generated")
-              : tr("互动影游已生成", "Interactive film generated")}
+              ? tr("分镜已生成", "Storyboard generated", "스토리보드가 생성되었습니다")
+              : tr("互动影游已生成", "Interactive film generated", "인터랙티브 필름이 생성되었습니다")}
         </div>
         {details.kind === "interactive_film_created" && details.projectId && onOpenFilmStudio && (
           <button
@@ -510,7 +522,7 @@ function ScriptStoryboardResultPreview({ exec, onOpenFilmStudio }: { exec: ToolE
             onClick={() => onOpenFilmStudio(details.projectId!)}
             className="shrink-0 rounded-lg bg-primary px-3 py-1 text-[13px] font-semibold text-primary-foreground hover:opacity-90 transition-opacity"
           >
-            {tr("打开创作向导 →", "Open creation wizard →")}
+            {tr("打开创作向导 →", "Open creation wizard →", "제작 마법사 열기 →")}
           </button>
         )}
       </div>
@@ -524,10 +536,10 @@ function ScriptStoryboardResultPreview({ exec, onOpenFilmStudio }: { exec: ToolE
               className="group flex w-full items-start justify-between gap-3 rounded-lg border border-transparent px-2 py-1.5 text-left transition hover:border-primary/25 hover:bg-background/65"
             >
               <span className="min-w-0 text-[13px] leading-5 text-muted-foreground break-all">
-                <span className="font-medium text-foreground">{label}{tr("：", ": ")}</span>{path}
+                <span className="font-medium text-foreground">{label}{tr("：", ": ", ": ")}</span>{path}
               </span>
               <span className="mt-0.5 shrink-0 rounded-md border border-primary/25 bg-primary/10 px-1.5 py-0.5 text-[11px] font-semibold text-primary opacity-80 transition group-hover:opacity-100">
-                {tr("查看", "View")}
+                {tr("查看", "View", "보기")}
               </span>
             </button>
           ))}
@@ -546,14 +558,14 @@ function ShortFictionResultPreview({ exec }: { exec: ToolExecution }) {
     if (!coverError) return null;
     return (
       <div className="mx-3 mb-3 mt-1 rounded-xl border border-destructive/20 bg-destructive/5 px-3 py-2 text-xs text-destructive">
-        {tr("封面未生成：", "Cover not generated: ")}{coverError}
+        {tr("封面未生成：", "Cover not generated: ", "표지를 생성하지 못했습니다: ")}{coverError}
       </div>
     );
   }
 
   const coverUrl = buildApiUrl(`/project/files/${encodeProjectPath(coverPath)}`);
   if (!coverUrl) return null;
-  const title = details?.title ?? details?.storyId ?? tr("短篇封面", "Short fiction cover");
+  const title = details?.title ?? details?.storyId ?? tr("短篇封面", "Short fiction cover", "단편 표지");
 
   return (
     <div className="mx-3 mb-3 mt-1 overflow-hidden rounded-xl border border-border/40 bg-background/70">
@@ -683,13 +695,13 @@ function PlaySceneImagePreview({ details }: { details: PlayToolDetails }) {
     <div className="mt-3 overflow-hidden rounded-xl border border-border/40 bg-background/80">
       <img
         src={readyUrl}
-        alt={tr("本幕配图", "Scene illustration")}
+        alt={tr("本幕配图", "Scene illustration", "장면 삽화")}
         className="block max-h-[420px] w-full object-contain bg-muted/20"
         loading="lazy"
       />
       {details.turn != null && (
         <div className="border-t border-border/40 px-3 py-2.5 text-[14px] leading-6 text-muted-foreground">
-          {tr(`第 ${Math.trunc(details.turn)} 幕配图`, `Scene ${Math.trunc(details.turn)} illustration`)}
+          {tr(`第 ${Math.trunc(details.turn)} 幕配图`, `Scene ${Math.trunc(details.turn)} illustration`, `${Math.trunc(details.turn)}번째 장면 삽화`)}
         </div>
       )}
     </div>
@@ -740,9 +752,9 @@ export function getProposedActionContractRows(details: ProposedActionDetails): R
   if (details.action !== "play_start" || !playStart) return [];
   const rows: Array<{ label: string; value: string }> = [];
   const worldContract = playStart.worldContract?.trim();
-  if (worldContract) rows.push({ label: tr("世界契约", "World contract"), value: worldContract });
+  if (worldContract) rows.push({ label: tr("世界契约", "World contract", "세계 규약"), value: worldContract });
   const visualContract = playStart.visualContract?.trim();
-  if (visualContract) rows.push({ label: tr("视觉契约", "Visual contract"), value: visualContract });
+  if (visualContract) rows.push({ label: tr("视觉契约", "Visual contract", "시각 규약"), value: visualContract });
   return rows;
 }
 
@@ -769,7 +781,7 @@ function ProposedActionPreview({
   const contractRows = getProposedActionContractRows(details);
   return (
     <div className="mx-3 mb-3 mt-1 rounded-xl border border-primary/25 bg-primary/5 px-4 py-3.5">
-      <div className="text-[17px] leading-6 font-semibold text-foreground">{details.title ?? tr("确认执行", "Confirm action")}</div>
+      <div className="text-[17px] leading-6 font-semibold text-foreground">{details.title ?? tr("确认执行", "Confirm action", "실행 확인")}</div>
       {details.summary && (
         <div className="mt-1.5 whitespace-pre-wrap break-words text-[15px] leading-7 text-muted-foreground">{details.summary}</div>
       )}
@@ -789,10 +801,10 @@ function ProposedActionPreview({
       {resolution === "confirmed" ? (
         <div className="mt-3 flex items-center gap-1.5 text-[15px] leading-6 font-medium text-primary">
           <Check size={15} className="shrink-0" />
-          {tr("已确认", "Confirmed")}
+          {tr("已确认", "Confirmed", "확인됨")}
         </div>
       ) : resolution === "rejected" ? (
-        <div className="mt-3 text-[15px] leading-6 font-medium text-muted-foreground">{tr("已取消", "Cancelled")}</div>
+        <div className="mt-3 text-[15px] leading-6 font-medium text-muted-foreground">{tr("已取消", "Cancelled", "취소됨")}</div>
       ) : (
         <div className="mt-3 flex flex-wrap gap-2">
           <button
@@ -802,7 +814,7 @@ function ProposedActionPreview({
             disabled={!onProposedAction || streaming || locked}
             className="rounded-lg bg-primary px-3.5 py-2 text-[15px] leading-6 font-medium text-primary-foreground disabled:opacity-50"
           >
-            {streaming ? tr("等待当前操作", "Waiting for current action") : tr("继续执行", "Continue")}
+            {streaming ? tr("等待当前操作", "Waiting for current action", "현재 작업 대기 중") : tr("继续执行", "Continue", "계속 실행")}
           </button>
           <button
             type="button"
@@ -810,7 +822,7 @@ function ProposedActionPreview({
             disabled={!onRejectProposedAction || streaming || locked}
             className="rounded-lg border border-border/60 bg-background/80 px-3.5 py-2 text-[15px] leading-6 font-medium text-muted-foreground disabled:opacity-50"
           >
-            {tr("取消", "Cancel")}
+            {tr("取消", "Cancel", "취소")}
           </button>
         </div>
       )}
@@ -823,12 +835,12 @@ function PlayResultPreview({ exec }: { exec: ToolExecution }) {
   const details = getPlayToolDetails(exec);
   if (!details?.sceneText) return null;
   const label = details.kind === "play_world_started"
-    ? tr("互动世界已启动", "Interactive world started")
+    ? tr("互动世界已启动", "Interactive world started", "인터랙티브 월드가 시작되었습니다")
     : details.kind === "play_turn_revised"
-      ? tr("互动回合已重做", "Play turn redone")
+      ? tr("互动回合已重做", "Play turn redone", "인터랙티브 턴을 다시 진행했습니다")
       : details.kind === "play_variant_restored"
-        ? tr("已切换互动回合版本", "Switched play turn variant")
-        : tr("互动世界已推进", "Interactive world advanced");
+        ? tr("已切换互动回合版本", "Switched play turn variant", "인터랙티브 턴 버전을 전환했습니다")
+        : tr("互动世界已推进", "Interactive world advanced", "인터랙티브 월드가 진행되었습니다");
   return (
     <div className="mx-3 mb-3 mt-1 rounded-xl border border-primary/20 bg-primary/5 px-3 py-3">
       <div className="mb-2 text-[16px] leading-6 font-semibold text-primary">
@@ -845,18 +857,18 @@ function PlayEditPreview({ exec }: { exec: ToolExecution }) {
   const details = getPlayEditDetails(exec);
   if (!details) return null;
   const changes = [
-    details.updatedWorldContract ? tr("世界契约", "World contract") : "",
-    details.updatedVisualContract ? tr("视觉契约", "Visual contract") : "",
-    details.updatedPremise ? tr("世界前提", "World premise") : "",
+    details.updatedWorldContract ? tr("世界契约", "World contract", "세계 규약") : "",
+    details.updatedVisualContract ? tr("视觉契约", "Visual contract", "시각 규약") : "",
+    details.updatedPremise ? tr("世界前提", "World premise", "세계 전제") : "",
     details.updatedEntities && details.updatedEntities > 0
-      ? tr(`${details.updatedEntities} 张卡片`, `${details.updatedEntities} cards`)
+      ? tr(`${details.updatedEntities} 张卡片`, `${details.updatedEntities} cards`, `카드 ${details.updatedEntities}장`)
       : "",
   ].filter(Boolean);
   return (
     <div className="mx-3 mb-3 mt-1 rounded-xl border border-primary/20 bg-primary/5 px-3 py-2.5">
-      <div className="text-[16px] leading-6 font-semibold text-primary">{tr("互动世界设定已更新", "Interactive world settings updated")}</div>
+      <div className="text-[16px] leading-6 font-semibold text-primary">{tr("互动世界设定已更新", "Interactive world settings updated", "인터랙티브 월드 설정이 업데이트되었습니다")}</div>
       <div className="mt-1 text-xs leading-5 text-muted-foreground">
-        {changes.length > 0 ? changes.join(" · ") : tr("已写入当前世界。", "Written to the current world.")}
+        {changes.length > 0 ? changes.join(" · ") : tr("已写入当前世界。", "Written to the current world.", "현재 월드에 반영했습니다.")}
       </div>
     </div>
   );
@@ -913,7 +925,7 @@ export function PipelineResultDetails({ result, defaultOpen }: { result: string;
       className="mx-3 mb-3 mt-1 rounded-lg border border-border/40 bg-background/60 px-2.5 py-2 text-xs"
     >
       <summary className="cursor-pointer select-none font-medium text-muted-foreground hover:text-foreground">
-        {tr("查看操作结果", "View result")}
+        {tr("查看操作结果", "View result", "작업 결과 보기")}
       </summary>
       <div className="mt-2 max-h-80 overflow-auto whitespace-pre-wrap break-words leading-5 text-foreground">
         {result}
@@ -1091,7 +1103,7 @@ function UtilityToolsGroup({ execs }: { execs: ToolExecution[] }) {
     <Collapsible open={open} onOpenChange={setOpen}>
       <CollapsibleTrigger className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer text-xs text-muted-foreground">
         <Wrench size={12} />
-        <span>{tr(`${execs.length} 个文件操作`, `${execs.length} file operation${execs.length === 1 ? "" : "s"}`)}</span>
+        <span>{tr(`${execs.length} 个文件操作`, `${execs.length} file operation${execs.length === 1 ? "" : "s"}`, `파일 작업 ${execs.length}개`)}</span>
         {allDone && !hasError && <CheckCircle2 size={10} className="text-green-600 dark:text-green-400" />}
         {hasError && <XCircle size={10} className="text-destructive" />}
         {!allDone && <Loader2 size={10} className="animate-spin text-primary" />}

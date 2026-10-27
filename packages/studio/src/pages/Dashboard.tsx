@@ -157,14 +157,14 @@ export function Dashboard({ nav, sse, theme, t }: { nav: Nav; sse: { messages: R
   if (loading || worksQuery.loading) return (
     <div className="flex flex-col items-center justify-center py-32 space-y-4">
       <div className="w-8 h-8 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
-      <span className="text-sm text-muted-foreground animate-pulse">Gathering manuscripts...</span>
+      <span className="text-sm text-muted-foreground animate-pulse">{tr("正在整理书稿...", "Gathering manuscripts...", "원고를 불러오는 중...")}</span>
     </div>
   );
 
   if (error || worksQuery.error) return (
     <div className="flex flex-col items-center justify-center py-20 bg-destructive/5 border border-destructive/20 rounded-2xl">
       <AlertCircle className="text-destructive mb-4" size={32} />
-      <h2 className="text-lg font-semibold text-destructive">Failed to load library</h2>
+      <h2 className="text-lg font-semibold text-destructive">{tr("书库加载失败", "Failed to load library", "서재를 불러오지 못했습니다")}</h2>
       <p className="text-sm text-muted-foreground mt-1">{error ?? worksQuery.error}</p>
     </div>
   );
@@ -195,14 +195,14 @@ export function Dashboard({ nav, sse, theme, t }: { nav: Nav; sse: { messages: R
       {!hasServices && (
         <div className="rounded-lg border border-border/60 bg-card px-5 py-4 mb-8 flex items-center justify-between gap-4">
           <div>
-            <div className="text-sm font-medium">还没有配置 AI 模型</div>
-            <div className="text-xs text-muted-foreground mt-0.5">配好一个服务商才能开始创作</div>
+            <div className="text-sm font-medium">{tr("还没有配置 AI 模型", "No AI model configured yet", "아직 AI 모델을 설정하지 않았습니다")}</div>
+            <div className="text-xs text-muted-foreground mt-0.5">{tr("配好一个服务商才能开始创作", "Set up a model service to start writing", "모델 서비스를 하나 설정해야 창작을 시작할 수 있습니다")}</div>
           </div>
           <button
             onClick={nav.toServices}
             className="px-4 py-2 text-xs rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors shrink-0"
           >
-            去配置
+            {tr("去配置", "Configure", "설정하기")}
           </button>
         </div>
       )}
@@ -282,7 +282,7 @@ export function Dashboard({ nav, sse, theme, t }: { nav: Nav; sse: { messages: R
                   <button
                     onClick={async () => {
                       try { await postApi(`/books/${book.id}/write-next`); }
-                      catch (e) { alert(e instanceof Error ? e.message : "Write failed"); }
+                      catch (e) { alert(e instanceof Error ? e.message : tr("写作失败", "Write failed", "집필에 실패했습니다")); }
                     }}
                     disabled={isWriting}
                     className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-sm ${
@@ -335,8 +335,8 @@ export function Dashboard({ nav, sse, theme, t }: { nav: Nav; sse: { messages: R
       {otherWorks.length > 0 && (
         <section className="space-y-4">
           <div className="border-b border-border/40 pb-4">
-            <h2 className="font-serif text-3xl">{tr("其他创作", "Other creative Works")}</h2>
-            <p className="mt-1 text-sm text-muted-foreground">{tr("短篇、剧本、分镜、互动世界、互动影游与翻译", "Short fiction, scripts, storyboards, interactive works, and translations")}</p>
+            <h2 className="font-serif text-3xl">{tr("其他创作", "Other creative Works", "다른 작품")}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">{tr("短篇、剧本、分镜、互动世界、互动影游与翻译", "Short fiction, scripts, storyboards, interactive works, and translations", "단편, 대본, 스토리보드, 인터랙티브 월드, 인터랙티브 필름, 번역")}</p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             {otherWorks.map((work) => (
@@ -348,7 +348,7 @@ export function Dashboard({ nav, sse, theme, t }: { nav: Nav; sse: { messages: R
               >
                 <div className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">{work.profileId}</div>
                 <div className="mt-2 truncate text-lg font-semibold">{work.title}</div>
-                <div className="mt-3 text-xs text-muted-foreground">{work.artifactCount} artifacts · {work.status}</div>
+                <div className="mt-3 text-xs text-muted-foreground">{work.artifactCount} {tr("个产物", "artifacts", "개 결과물")} · {work.status}</div>
               </button>
             ))}
           </div>
@@ -364,20 +364,20 @@ export function Dashboard({ nav, sse, theme, t }: { nav: Nav; sse: { messages: R
                 <Flame size={18} className="animate-pulse" />
               </div>
               <div>
-                <h3 className="text-sm font-bold uppercase tracking-widest text-primary"> Manuscript Foundry</h3>
-                <p className="text-xs text-muted-foreground mt-0.5">Real-time LLM generation tracking</p>
+                <h3 className="text-sm font-bold uppercase tracking-widest text-primary">{tr("书稿工坊", "Manuscript Foundry", "원고 작업실")}</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">{tr("实时追踪 LLM 生成进度", "Real-time LLM generation tracking", "LLM 생성 진행 실시간 추적")}</p>
               </div>
             </div>
             {progressEvent && (
               <div className="flex items-center gap-4 text-xs font-bold text-primary px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
                 <div className="flex items-center gap-2">
                   <Clock size={12} />
-                  <span>{Math.round(((progressEvent.data as { elapsedMs?: number })?.elapsedMs ?? 0) / 1000)}s</span>
+                  <span>{Math.round(((progressEvent.data as { elapsedMs?: number })?.elapsedMs ?? 0) / 1000)}{tr("秒", "s", "초")}</span>
                 </div>
                 <div className="w-px h-3 bg-primary/20" />
                 <div className="flex items-center gap-2">
                   <Zap size={12} />
-                  <span>{((progressEvent.data as { totalChars?: number })?.totalChars ?? 0).toLocaleString()} Chars</span>
+                  <span>{((progressEvent.data as { totalChars?: number })?.totalChars ?? 0).toLocaleString()} {tr("字", "Chars", "자")}</span>
                 </div>
               </div>
             )}

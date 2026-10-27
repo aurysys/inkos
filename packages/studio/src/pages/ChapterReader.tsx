@@ -3,6 +3,7 @@ import { fetchJson, useApi } from "../hooks/use-api";
 import type { Theme } from "../hooks/use-theme";
 import type { TFunction } from "../hooks/use-i18n";
 import { useColors } from "../hooks/use-colors";
+import { tr } from "../lib/app-language";
 import { ChapterWorkspacePanel } from "../components/ChapterWorkspacePanel";
 import {
   ChevronLeft,
@@ -69,7 +70,7 @@ export function ChapterReader({ bookId, chapterNumber, nav, theme, t }: {
       refetch();
       setWorkspaceRevision((revision) => revision + 1);
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Save failed");
+      alert(e instanceof Error ? e.message : tr("保存失败", "Save failed", "저장에 실패했습니다"));
     } finally {
       setSaving(false);
     }
@@ -82,13 +83,13 @@ export function ChapterReader({ bookId, chapterNumber, nav, theme, t }: {
     </div>
   );
 
-  if (error) return <div className="text-destructive p-8 bg-destructive/5 rounded-xl border border-destructive/20">Error: {error}</div>;
+  if (error) return <div className="text-destructive p-8 bg-destructive/5 rounded-xl border border-destructive/20">{tr("错误：", "Error: ", "오류: ")}{error}</div>;
   if (!data) return null;
 
   // Split markdown content into title and body
   const lines = data.content.split("\n");
   const titleLine = lines.find((l) => l.startsWith("# "));
-  const title = titleLine?.replace(/^#\s*/, "") ?? `Chapter ${chapterNumber}`;
+  const title = titleLine?.replace(/^#\s*/, "") ?? tr(`第${chapterNumber}章`, `Chapter ${chapterNumber}`, `${chapterNumber}장`);
   const body = lines
     .filter((l) => l !== titleLine)
     .join("\n")

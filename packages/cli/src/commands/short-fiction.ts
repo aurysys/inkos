@@ -17,20 +17,21 @@ import {
   type ShortFictionLanguage,
 } from "@actalk/inkos-core";
 import { buildPipelineConfig, findProjectRoot, loadConfig, log, logError, resolveCliProfileSkills } from "../utils.js";
+import { uiText } from "../ui-locale.js";
 
 export { extractResponsesImageBase64, resolveCoverApiKey } from "@actalk/inkos-core";
 
 export const shortCommand = new Command("short")
-  .description("Short fiction production workflow");
+  .description(uiText("Short fiction production workflow", "단편소설 제작 워크플로"));
 
 shortCommand.command("revise")
-  .description("Revise a complete short-fiction Work using its review and update its sales package")
+  .description(uiText("Revise a complete short-fiction Work using its review and update its sales package", "완성된 단편소설 작품을 검토 결과에 따라 수정하고 판매용 패키지를 갱신합니다"))
   .argument("<story-id>")
-  .requiredOption("--instruction <text>","Revision direction")
-  .option("--chars <n>","Target native length per chapter","1000")
-  .option("--model <model>","Whole-story revision model","deepseek-v4-pro")
-  .option("--chapters <numbers>","Limit revision to comma-separated chapter numbers")
-  .option("--json","Output JSON")
+  .requiredOption("--instruction <text>",uiText("Revision direction", "수정 방향"))
+  .option("--chars <n>",uiText("Target native length per chapter", "챕터당 목표 분량(집필 언어 기준 단위)"),"1000")
+  .option("--model <model>",uiText("Whole-story revision model", "작품 전체 수정에 쓸 모델"),"deepseek-v4-pro")
+  .option("--chapters <numbers>",uiText("Limit revision to comma-separated chapter numbers", "쉼표로 구분한 챕터 번호만 수정합니다"))
+  .option("--json",uiText("Output JSON", "JSON으로 출력합니다"))
   .action(async(storyId:string,opts)=>{
     try {
       const root=findProjectRoot();const config=await loadConfig({projectRoot:root});
@@ -43,32 +44,35 @@ shortCommand.command("revise")
         parameters:{instruction:opts.instruction,charsPerChapter:parsePositiveInteger(opts.chars,1000,"chars"),...(opts.chapters?{chapterNumbers:opts.chapters.split(",").map((number:string)=>parsePositiveInteger(number.trim(),1,"chapter"))}:{})},
       });
       log(opts.json?JSON.stringify(result,null,2):result.content??result.summary);
-    } catch(error) {logCommandError("Short revision failed",error,opts.json);process.exitCode=1;}
+    } catch(error) {logCommandError("Short revision failed","단편 수정에 실패했습니다",error,opts.json);process.exitCode=1;}
   });
 
 shortCommand
   .command("run")
-  .description("Run a short fiction chain from a direction")
-  .requiredOption("--direction <text>", "Story direction, e.g. \"女频短篇 婚姻背叛 证据反杀\" or \"female-lead short: marriage betrayal, evidence payback\"")
-  .option("--reference <path>", "Optional reference notes/text")
-  .option("--story-id <id>", "Work id for the generated short fiction")
-  .option("--lang <language>", "Writing language: zh or en", "zh")
-  .option("--chapters <n>", "Complete short chapter count", String(SHORT_FICTION_DEFAULT_CHAPTERS))
-  .option("--chars <n>", "Per-chapter length: zh characters or en words")
-  .option("--min-chapter-length-ratio <ratio>", "Minimum complete chapter length relative to target (0 < ratio <= 1)", "0.5")
-  .option("--llm-base-url <url>", "Override LLM base URL")
-  .option("--model <model>", "Fallback model for all short stages")
-  .option("--planner-model <model>", "Model for outline creation")
-  .option("--writer-model <model>", "Model for first full draft")
-  .option("--draft-review-model <model>", "Model for draft review")
-  .option("--package-model <model>", "Model for synopsis and cover prompt packaging")
-  .option("--cover-base-url <url>", "Image API base URL; defaults to the project cover service")
-  .option("--cover-endpoint <url>", "Exact image endpoint; overrides --cover-base-url")
-  .option("--cover-model <model>", "Image model; defaults to the project cover model")
-  .option("--cover-size <size>", "Cover image size", "1024x1360")
-  .option("--cover-api-key-env <name>", "Env var containing cover API key", "INKOS_COVER_API_KEY")
-  .option("--no-cover", "Skip cover image generation")
-  .option("--json", "Output JSON")
+  .description(uiText("Run a short fiction chain from a direction", "주어진 방향으로 단편소설 제작 과정을 실행합니다"))
+  .requiredOption("--direction <text>", uiText(
+    "Story direction, e.g. \"女频短篇 婚姻背叛 证据反杀\" or \"female-lead short: marriage betrayal, evidence payback\"",
+    "이야기 방향, 예: \"여성향 단편: 결혼 배신, 증거로 반격\"",
+  ))
+  .option("--reference <path>", uiText("Optional reference notes/text", "참고 메모/텍스트(선택)"))
+  .option("--story-id <id>", uiText("Work id for the generated short fiction", "생성할 단편소설의 작품 ID"))
+  .option("--lang <language>", uiText("Writing language: zh or en", "집필 언어: zh 또는 en"), "zh")
+  .option("--chapters <n>", uiText("Complete short chapter count", "완성할 단편의 챕터 수"), String(SHORT_FICTION_DEFAULT_CHAPTERS))
+  .option("--chars <n>", uiText("Per-chapter length: zh characters or en words", "챕터당 분량: zh는 글자 수, en은 단어 수"))
+  .option("--min-chapter-length-ratio <ratio>", uiText("Minimum complete chapter length relative to target (0 < ratio <= 1)", "목표 대비 완성 챕터의 최소 분량 비율(0 < ratio <= 1)"), "0.5")
+  .option("--llm-base-url <url>", uiText("Override LLM base URL", "LLM 기본 URL을 지정합니다"))
+  .option("--model <model>", uiText("Fallback model for all short stages", "모든 단편 단계에 쓸 기본 모델"))
+  .option("--planner-model <model>", uiText("Model for outline creation", "개요 작성에 쓸 모델"))
+  .option("--writer-model <model>", uiText("Model for first full draft", "첫 전체 초안 작성에 쓸 모델"))
+  .option("--draft-review-model <model>", uiText("Model for draft review", "초안 검토에 쓸 모델"))
+  .option("--package-model <model>", uiText("Model for synopsis and cover prompt packaging", "줄거리 요약과 표지 프롬프트 작성에 쓸 모델"))
+  .option("--cover-base-url <url>", uiText("Image API base URL; defaults to the project cover service", "이미지 API 기본 URL(기본값은 프로젝트의 표지 서비스)"))
+  .option("--cover-endpoint <url>", uiText("Exact image endpoint; overrides --cover-base-url", "이미지 엔드포인트 전체 URL. --cover-base-url보다 우선합니다"))
+  .option("--cover-model <model>", uiText("Image model; defaults to the project cover model", "이미지 모델(기본값은 프로젝트의 표지 모델)"))
+  .option("--cover-size <size>", uiText("Cover image size", "표지 이미지 크기"), "1024x1360")
+  .option("--cover-api-key-env <name>", uiText("Env var containing cover API key", "표지 API 키를 담은 환경 변수"), "INKOS_COVER_API_KEY")
+  .option("--no-cover", uiText("Skip cover image generation", "표지 이미지 생성을 건너뜁니다"))
+  .option("--json", uiText("Output JSON", "JSON으로 출력합니다"))
   .action(async (opts: ShortRunOptions) => {
     try {
       const root = findProjectRoot();
@@ -152,14 +156,14 @@ shortCommand
       if (opts.json) {
         log(JSON.stringify(payload, null, 2));
       } else {
-        log(`Skills: ${activatedSkillIds(activatedSkills).join(", ")}`);
-        log(`Short run complete: ${result.storyId}`);
-        log(`Final: ${payload.finalMarkdownPath}`);
-        log(`Sales package: ${payload.salesPackagePath}`);
+        log(uiText(`Skills: ${activatedSkillIds(activatedSkills).join(", ")}`, `스킬: ${activatedSkillIds(activatedSkills).join(", ")}`));
+        log(uiText(`Short run complete: ${result.storyId}`, `단편 제작을 마쳤습니다: ${result.storyId}`));
+        log(uiText(`Final: ${payload.finalMarkdownPath}`, `완성본: ${payload.finalMarkdownPath}`));
+        log(uiText(`Sales package: ${payload.salesPackagePath}`, `판매용 패키지: ${payload.salesPackagePath}`));
         log(formatCoverStatus(payload.coverImagePath, payload.coverError));
       }
     } catch (e) {
-      logCommandError("Short run failed", e, opts.json);
+      logCommandError("Short run failed", "단편 제작에 실패했습니다", e, opts.json);
     }
   });
 
@@ -188,7 +192,7 @@ interface ShortRunOptions {
 
 function parseShortFictionLanguage(value: string): ShortFictionLanguage {
   if (value === "zh" || value === "en") return value;
-  throw new Error("lang must be zh or en.");
+  throw new Error(uiText("lang must be zh or en.", "lang은 zh 또는 en이어야 합니다."));
 }
 
 interface ShortRunModels {
@@ -222,22 +226,22 @@ function parsePositiveInteger(
 ): number {
   const parsed = value ? Number.parseInt(value, 10) : fallback;
   if (!Number.isInteger(parsed) || parsed < 1) {
-    throw new Error(`${name} must be a positive integer.`);
+    throw new Error(uiText(`${name} must be a positive integer.`, `${name}은(는) 양의 정수여야 합니다.`));
   }
   return parsed;
 }
 
 function formatCoverStatus(coverImagePath?: string, coverError?: string): string {
-  if (coverImagePath) return `Cover: ${coverImagePath}`;
-  if (coverError) return `Cover: skipped (${coverError})`;
-  return "Cover: skipped";
+  if (coverImagePath) return uiText(`Cover: ${coverImagePath}`, `표지: ${coverImagePath}`);
+  if (coverError) return uiText(`Cover: skipped (${coverError})`, `표지: 건너뜀 (${coverError})`);
+  return uiText("Cover: skipped", "표지: 건너뜀");
 }
 
-function logCommandError(prefix: string, error: unknown, json?: boolean): void {
+function logCommandError(prefix: string, koPrefix: string, error: unknown, json?: boolean): void {
   if (json) {
     const details=error&&typeof error==="object"?error as Record<string,unknown>:{};
     log(JSON.stringify({ error: `${prefix}: ${String(error)}`,code:details.code,stopReason:details.stopReason,resultTool:details.resultTool,lastToolError:details.lastToolError,lastAssistantText:details.lastAssistantText }, null, 2));
     return;
   }
-  logError(`${prefix}: ${String(error)}`);
+  logError(`${uiText(prefix, koPrefix)}: ${String(error)}`);
 }

@@ -22,31 +22,31 @@ export function CreativeMethodsEditor({ profileId }: { profileId: string }) {
     setSkillId(id); setDocuments(result.documents); setPath("SKILL.md");
   });
   return <details className="rounded-xl border border-border bg-card p-5">
-    <summary className="cursor-pointer font-semibold">{tr("创作配置与专业方法", "Creative profile and methods")}</summary>
-    <p className="my-3 text-sm text-muted-foreground">{tr("项目配置用于后续任务。已有作品版本与执行记录保留其当时的来源。", "Project settings apply to subsequent tasks. Existing revisions and execution records retain their original sources.")}</p>
+    <summary className="cursor-pointer font-semibold">{tr("创作配置与专业方法", "Creative profile and methods", "창작 설정과 창작 방법")}</summary>
+    <p className="my-3 text-sm text-muted-foreground">{tr("项目配置用于后续任务。已有作品版本与执行记录保留其当时的来源。", "Project settings apply to subsequent tasks. Existing revisions and execution records retain their original sources.", "프로젝트 설정은 이후 작업에 적용됩니다. 기존 작품 버전과 실행 기록은 당시의 출처를 그대로 유지합니다.")}</p>
     {profile && <>
-      <button className="rounded border border-border px-3 py-2 text-sm" onClick={() => setProfileText(JSON.stringify(profile, null, 2))}>{tr("编辑作品配置", "Edit profile")}</button>
+      <button className="rounded border border-border px-3 py-2 text-sm" onClick={() => setProfileText(JSON.stringify(profile, null, 2))}>{tr("编辑作品配置", "Edit profile", "작품 설정 편집")}</button>
       {profileText !== null && <div className="mt-3 space-y-2">
-        <textarea aria-label={tr("作品配置", "Profile configuration")} className="h-72 w-full rounded border border-border bg-background p-3 font-mono text-sm" value={profileText} onChange={event => setProfileText(event.target.value)} />
+        <textarea aria-label={tr("作品配置", "Profile configuration", "작품 설정")} className="h-72 w-full rounded border border-border bg-background p-3 font-mono text-sm" value={profileText} onChange={event => setProfileText(event.target.value)} />
         <button disabled={busy} className="rounded bg-primary px-3 py-2 text-sm text-primary-foreground" onClick={() => void perform(async () => {
           await fetchJson(`/profiles/${encodeURIComponent(profileId)}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: profileText });
-          setMessage(tr("作品配置已保存。", "Profile saved."));
-        })}>{tr("保存作品配置", "Save profile")}</button>
+          setMessage(tr("作品配置已保存。", "Profile saved.", "작품 설정을 저장했습니다."));
+        })}>{tr("保存作品配置", "Save profile", "작품 설정 저장")}</button>
         <button disabled={busy} className="ml-3 rounded border border-border px-3 py-2 text-sm" onClick={() => void perform(async () => {
           await fetchJson("/profiles", { method: "POST", headers: { "Content-Type": "application/json" }, body: profileText });
-          setMessage(tr("新类型已保存，可在创作对话中使用其 ID 创建作品。", "New profile saved. Use its ID in the creation chat."));
-        })}>{tr("保存为新类型（请先更改 ID）", "Save as new profile (change ID first)")}</button>
+          setMessage(tr("新类型已保存，可在创作对话中使用其 ID 创建作品。", "New profile saved. Use its ID in the creation chat.", "새 유형을 저장했습니다. 창작 대화에서 이 ID로 작품을 만들 수 있습니다."));
+        })}>{tr("保存为新类型（请先更改 ID）", "Save as new profile (change ID first)", "새 유형으로 저장(먼저 ID를 변경하세요)")}</button>
       </div>}
       <div className="my-4 flex flex-wrap gap-2">{[...new Set([...profile.requiredSkillIds, ...profile.recommendedSkillIds])].map(id => <button key={id} className="rounded border border-border px-3 py-2 text-sm" onClick={() => void openSkill(id)}>{id}</button>)}</div>
     </>}
     {skillId && <div className="space-y-3">
       <label className="text-sm font-medium">{skillId}</label>
-      <select aria-label={tr("方法文档", "Method document")} className="ml-3 rounded border border-border bg-background p-2" value={path} onChange={event => setPath(event.target.value)}>{documents.map(document => <option key={document.path}>{document.path}</option>)}</select>
-      <textarea aria-label={tr("方法正文", "Method text")} className="h-80 w-full rounded border border-border bg-background p-3 font-mono text-sm" value={documents.find(document => document.path === path)?.content ?? ""} onChange={event => setDocuments(documents.map(document => document.path === path ? { ...document, content: event.target.value } : document))} />
+      <select aria-label={tr("方法文档", "Method document", "창작 방법 문서")} className="ml-3 rounded border border-border bg-background p-2" value={path} onChange={event => setPath(event.target.value)}>{documents.map(document => <option key={document.path}>{document.path}</option>)}</select>
+      <textarea aria-label={tr("方法正文", "Method text", "창작 방법 본문")} className="h-80 w-full rounded border border-border bg-background p-3 font-mono text-sm" value={documents.find(document => document.path === path)?.content ?? ""} onChange={event => setDocuments(documents.map(document => document.path === path ? { ...document, content: event.target.value } : document))} />
       <button disabled={busy} className="rounded bg-primary px-3 py-2 text-sm text-primary-foreground" onClick={() => void perform(async () => {
         await fetchJson(`/skills/${encodeURIComponent(skillId)}/documents`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ documents }) });
-        setMessage(tr("项目方法与参考文档已保存。", "Project method and references saved."));
-      })}>{tr("保存项目方法", "Save project method")}</button>
+        setMessage(tr("项目方法与参考文档已保存。", "Project method and references saved.", "프로젝트 창작 방법과 참고 문서를 저장했습니다."));
+      })}>{tr("保存项目方法", "Save project method", "프로젝트 창작 방법 저장")}</button>
     </div>}
     {message && <p role="status" className="mt-3 whitespace-pre-wrap text-sm">{message}</p>}
   </details>;

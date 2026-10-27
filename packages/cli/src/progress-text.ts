@@ -8,6 +8,7 @@ import {
   type CliLanguage,
 } from "./localization.js";
 import type { Observation } from "@actalk/inkos-core";
+import { isKoreanUi } from "./ui-locale.js";
 
 export { type CliLanguage };
 
@@ -60,6 +61,16 @@ export function formatImportCompletionLines(
     readonly bookId: string;
   },
 ): string[] {
+  if (isKoreanUi()) {
+    return [
+      "가져오기 완료:",
+      `  가져온 챕터: ${result.importedCount}`,
+      `  총 글자 수: ${result.totalCountLabel}`,
+      `  다음 챕터 번호: ${result.nextChapter}`,
+      "",
+      `"inkos write next ${result.bookId}"을(를) 실행해 이어서 작성하세요.`,
+    ];
+  }
   return [
     language === "en" ? "Import complete:" : "导入完成：",
     language === "en"

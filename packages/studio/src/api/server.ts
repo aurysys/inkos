@@ -181,7 +181,29 @@ function normalizeStudioLanguage(value: unknown): StudioLanguage {
   return value === "en" ? "en" : "zh";
 }
 
-function pick(lang: StudioLanguage, zh: string, en: string): string {
+// Display locale for server-generated UI copy. "ko" pins Korean regardless of the
+// project writing language; "follow" keeps the original zh/en behavior.
+type StudioUiLocalePreference = "ko" | "follow";
+
+function normalizeStudioUiLocalePreference(value: unknown): StudioUiLocalePreference {
+  return value === "follow" ? "follow" : "ko";
+}
+
+let studioUiLocalePreference: StudioUiLocalePreference = normalizeStudioUiLocalePreference(
+  process.env.INKOS_UI_LOCALE,
+);
+
+function setStudioUiLocalePreference(preference: StudioUiLocalePreference): void {
+  studioUiLocalePreference = preference;
+}
+
+function pick(lang: StudioLanguage, zh: string, en: string, ko?: string): string {
+  if (studioUiLocalePreference === "ko") return ko ?? en;
+  return lang === "en" ? en : zh;
+}
+
+/** Content copy (LLM context, persisted Work text) follows the writing language only. */
+function pickContent(lang: StudioLanguage, zh: string, en: string): string {
   return lang === "en" ? en : zh;
 }
 
@@ -212,6 +234,7 @@ async function resolveStudioProfileSkills(
 interface BilingualLabel {
   readonly zh: string;
   readonly en: string;
+  readonly ko?: string;
 }
 
 function attachmentDisposition(fileName: string): string {
@@ -220,48 +243,48 @@ function attachmentDisposition(fileName: string): string {
 }
 
 const TOOL_LABELS: Record<string, BilingualLabel> = {
-  read: { zh: "读取文件", en: "Read file" },
-  edit: { zh: "编辑文件", en: "Edit file" },
-  grep: { zh: "搜索", en: "Search" },
-  ls: { zh: "列目录", en: "List directory" },
-  propose_action: { zh: "确认动作", en: "Confirm action" },
-  short_fiction_run: { zh: "短篇生产", en: "Short fiction" },
-  script_create: { zh: "剧本创作", en: "Script creation" },
-  storyboard_create: { zh: "分镜创作", en: "Storyboard creation" },
-  interactive_film_create: { zh: "互动影游", en: "Interactive film" },
-  translation_create: { zh: "翻译项目", en: "Translation" },
-  fanfic_create: { zh: "同人创作", en: "Fanfiction" },
-  continuation_import: { zh: "导入续写", en: "Continuation import" },
-  spinoff_create: { zh: "番外创作", en: "Side story" },
-  imitation_create: { zh: "仿写创作", en: "Style imitation" },
-  generate_cover: { zh: "生成封面", en: "Cover generation" },
-  play_edit: { zh: "编辑互动世界", en: "Edit interactive world" },
-  play_start: { zh: "启动互动世界", en: "Start interactive world" },
-  play_revise: { zh: "重做互动回合", en: "Redo interactive turn" },
-  generate: { zh: "生成当前作品", en: "Generate current work" },
-  play_step: { zh: "推进互动世界", en: "Advance interactive world" },
-  create_book: { zh: "创建长篇", en: "Create long-form Work" },
-  revise_foundation: { zh: "重建设定", en: "Revise foundation" },
-  write_chapters: { zh: "写作章节", en: "Write chapters" },
-  review_chapter: { zh: "审查章节", en: "Review chapter" },
-  revise_chapter: { zh: "修订章节", en: "Revise chapter" },
-  export_book: { zh: "导出作品", en: "Export Work" },
-  create_narrative_forecast: { zh: "剧情多线推演", en: "Narrative forecast" },
-  get_narrative_forecast: { zh: "核验剧情推演", en: "Recheck forecast" },
-  select_narrative_branch: { zh: "采用候选分支", en: "Select candidate branch" },
+  read: { zh: "读取文件", en: "Read file", ko: "파일 읽기" },
+  edit: { zh: "编辑文件", en: "Edit file", ko: "파일 편집" },
+  grep: { zh: "搜索", en: "Search", ko: "검색" },
+  ls: { zh: "列目录", en: "List directory", ko: "디렉터리 목록" },
+  propose_action: { zh: "确认动作", en: "Confirm action", ko: "작업 확인" },
+  short_fiction_run: { zh: "短篇生产", en: "Short fiction", ko: "단편 제작" },
+  script_create: { zh: "剧本创作", en: "Script creation", ko: "대본 작성" },
+  storyboard_create: { zh: "分镜创作", en: "Storyboard creation", ko: "스토리보드 작성" },
+  interactive_film_create: { zh: "互动影游", en: "Interactive film", ko: "인터랙티브 필름" },
+  translation_create: { zh: "翻译项目", en: "Translation", ko: "번역 프로젝트" },
+  fanfic_create: { zh: "同人创作", en: "Fanfiction", ko: "팬픽 작성" },
+  continuation_import: { zh: "导入续写", en: "Continuation import", ko: "이어쓰기 가져오기" },
+  spinoff_create: { zh: "番外创作", en: "Side story", ko: "외전 작성" },
+  imitation_create: { zh: "仿写创作", en: "Style imitation", ko: "문체 모방 작성" },
+  generate_cover: { zh: "生成封面", en: "Cover generation", ko: "표지 생성" },
+  play_edit: { zh: "编辑互动世界", en: "Edit interactive world", ko: "인터랙티브 월드 편집" },
+  play_start: { zh: "启动互动世界", en: "Start interactive world", ko: "인터랙티브 월드 시작" },
+  play_revise: { zh: "重做互动回合", en: "Redo interactive turn", ko: "인터랙티브 턴 다시 진행" },
+  generate: { zh: "生成当前作品", en: "Generate current work", ko: "현재 작품 생성" },
+  play_step: { zh: "推进互动世界", en: "Advance interactive world", ko: "인터랙티브 월드 진행" },
+  create_book: { zh: "创建长篇", en: "Create long-form Work", ko: "장편 만들기" },
+  revise_foundation: { zh: "重建设定", en: "Revise foundation", ko: "기본 설정 재구성" },
+  write_chapters: { zh: "写作章节", en: "Write chapters", ko: "챕터 쓰기" },
+  review_chapter: { zh: "审查章节", en: "Review chapter", ko: "챕터 검토" },
+  revise_chapter: { zh: "修订章节", en: "Revise chapter", ko: "챕터 수정" },
+  export_book: { zh: "导出作品", en: "Export Work", ko: "작품 내보내기" },
+  create_narrative_forecast: { zh: "剧情多线推演", en: "Narrative forecast", ko: "다중 전개 예측" },
+  get_narrative_forecast: { zh: "核验剧情推演", en: "Recheck forecast", ko: "전개 예측 재확인" },
+  select_narrative_branch: { zh: "采用候选分支", en: "Select candidate branch", ko: "후보 분기 채택" },
 };
 
 function resolveToolLabel(tool: string, _agent?: string, lang: StudioLanguage = "zh"): string {
   const label = TOOL_LABELS[tool];
-  return label ? pick(lang, label.zh, label.en) : tool;
+  return label ? pick(lang, label.zh, label.en, label.ko) : tool;
 }
 
 function formatTaskElapsed(ms: number, lang: StudioLanguage): string {
   const totalSeconds = Math.max(0, Math.floor(ms / 1000));
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
-  if (minutes === 0) return pick(lang, `${seconds} 秒`, `${seconds}s`);
-  return pick(lang, `${minutes} 分 ${seconds} 秒`, `${minutes}m ${seconds}s`);
+  if (minutes === 0) return pickContent(lang, `${seconds} 秒`, `${seconds}s`);
+  return pickContent(lang, `${minutes} 分 ${seconds} 秒`, `${minutes}m ${seconds}s`);
 }
 
 /**
@@ -272,13 +295,13 @@ function buildRunningTaskContextBlock(task: StudioTaskSnapshot, lang: StudioLang
   const exec = task.execution;
   const elapsed = formatTaskElapsed(Date.now() - exec.startedAt, lang);
   const status = exec.status === "processing"
-    ? pick(lang, "处理中", "processing")
-    : pick(lang, "运行中", "running");
+    ? pickContent(lang, "处理中", "processing")
+    : pickContent(lang, "运行中", "running");
   const logsTail = (exec.logs ?? []).slice(-3);
   const logsBlock = logsTail.length > 0
-    ? `\n${pick(lang, "- 最近日志：", "- Recent logs:")}\n${logsTail.map((line) => `  - ${line}`).join("\n")}`
+    ? `\n${pickContent(lang, "- 最近日志：", "- Recent logs:")}\n${logsTail.map((line) => `  - ${line}`).join("\n")}`
     : "";
-  return pick(
+  return pickContent(
     lang,
     [
       "## 后台任务状态",
@@ -436,6 +459,7 @@ function nonTextModelMessage(modelId: string, lang: StudioLanguage = "zh"): stri
     lang,
     `模型 ${modelId} 不适合文本聊天/写作。请在模型选择器中改用文本模型，例如 gemini-2.5-flash、gemini-2.5-pro 或对应服务的 chat 模型。`,
     `Model ${modelId} is not suitable for text chat/writing. Pick a text model in the model selector, e.g. gemini-2.5-flash, gemini-2.5-pro, or the service's chat model.`,
+    `모델 ${modelId}은(는) 텍스트 대화·글쓰기에 적합하지 않습니다. 모델 선택기에서 gemini-2.5-flash, gemini-2.5-pro 또는 해당 서비스의 chat 모델 같은 텍스트 모델을 선택하세요.`,
   );
 }
 
@@ -821,15 +845,15 @@ function normalizeSkillImportPath(value: unknown): string {
   return parts.join("/");
 }
 
-function normalizeSkillImportFiles(value: unknown): {
+function normalizeSkillImportFiles(value: unknown, lang: StudioLanguage): {
   readonly files: ReadonlyArray<StudioSkillImportFile>;
   readonly manifestPath: string;
 } {
   if (!Array.isArray(value) || value.length === 0) {
-    throw new ApiError(400, "INVALID_SKILL_IMPORT", "Skill import requires at least one file");
+    throw new ApiError(400, "INVALID_SKILL_IMPORT", pick(lang, "导入技能至少需要一个文件", "Skill import requires at least one file", "스킬을 가져오려면 파일이 하나 이상 필요합니다"));
   }
   if (value.length > MAX_SKILL_IMPORT_FILES) {
-    throw new ApiError(413, "SKILL_IMPORT_TOO_MANY_FILES", `A skill may contain at most ${MAX_SKILL_IMPORT_FILES} files`);
+    throw new ApiError(413, "SKILL_IMPORT_TOO_MANY_FILES", pick(lang, `一个技能最多只能包含 ${MAX_SKILL_IMPORT_FILES} 个文件`, `A skill may contain at most ${MAX_SKILL_IMPORT_FILES} files`, `스킬 하나에는 파일을 최대 ${MAX_SKILL_IMPORT_FILES}개까지 넣을 수 있습니다`));
   }
 
   const files: StudioSkillImportFile[] = [];
@@ -843,18 +867,18 @@ function normalizeSkillImportFiles(value: unknown): {
     const path = normalizeSkillImportPath(record.path);
     const pathKey = path.toLowerCase();
     if (seenPathKeys.has(pathKey)) {
-      throw new ApiError(400, "INVALID_SKILL_IMPORT", `Duplicate skill import path: ${path}`);
+      throw new ApiError(400, "INVALID_SKILL_IMPORT", pick(lang, `技能导入路径重复：${path}`, `Duplicate skill import path: ${path}`, `가져올 스킬 경로가 중복됩니다: ${path}`));
     }
     if (typeof record.dataUrl !== "string") {
       throw new ApiError(400, "INVALID_SKILL_IMPORT", `Missing dataUrl for ${path}`);
     }
     const { buffer } = parseDataUrl(record.dataUrl);
     if (buffer.byteLength > MAX_SKILL_IMPORT_FILE_BYTES) {
-      throw new ApiError(413, "SKILL_IMPORT_FILE_TOO_LARGE", `${path} exceeds ${MAX_SKILL_IMPORT_FILE_BYTES} bytes`);
+      throw new ApiError(413, "SKILL_IMPORT_FILE_TOO_LARGE", pick(lang, `${path} 超过 ${MAX_SKILL_IMPORT_FILE_BYTES} 字节`, `${path} exceeds ${MAX_SKILL_IMPORT_FILE_BYTES} bytes`, `${path} 파일이 ${MAX_SKILL_IMPORT_FILE_BYTES}바이트를 넘습니다`));
     }
     totalBytes += buffer.byteLength;
     if (totalBytes > MAX_SKILL_IMPORT_TOTAL_BYTES) {
-      throw new ApiError(413, "SKILL_IMPORT_TOO_LARGE", `Skill folder exceeds ${MAX_SKILL_IMPORT_TOTAL_BYTES} bytes`);
+      throw new ApiError(413, "SKILL_IMPORT_TOO_LARGE", pick(lang, `技能文件夹超过 ${MAX_SKILL_IMPORT_TOTAL_BYTES} 字节`, `Skill folder exceeds ${MAX_SKILL_IMPORT_TOTAL_BYTES} bytes`, `스킬 폴더가 ${MAX_SKILL_IMPORT_TOTAL_BYTES}바이트를 넘습니다`));
     }
     seenPathKeys.add(pathKey);
     files.push({ path, buffer });
@@ -862,7 +886,7 @@ function normalizeSkillImportFiles(value: unknown): {
 
   const manifests = files.filter((file) => file.path === "SKILL.md" || file.path.endsWith("/SKILL.md"));
   if (manifests.length !== 1) {
-    throw new ApiError(400, "INVALID_SKILL_IMPORT", "Skill import must contain exactly one SKILL.md");
+    throw new ApiError(400, "INVALID_SKILL_IMPORT", pick(lang, "导入的技能必须且只能包含一个 SKILL.md", "Skill import must contain exactly one SKILL.md", "가져올 스킬에는 SKILL.md가 정확히 하나 있어야 합니다"));
   }
   const manifestPath = manifests[0]!.path;
   const folder = manifestPath === "SKILL.md"
@@ -870,7 +894,7 @@ function normalizeSkillImportFiles(value: unknown): {
     : manifestPath.slice(0, -"/SKILL.md".length);
   for (const file of files) {
     if (folder && !file.path.startsWith(`${folder}/`)) {
-      throw new ApiError(400, "INVALID_SKILL_IMPORT_PATH", "All imported files must be inside the SKILL.md folder");
+      throw new ApiError(400, "INVALID_SKILL_IMPORT_PATH", pick(lang, "所有导入的文件都必须位于 SKILL.md 所在的文件夹内", "All imported files must be inside the SKILL.md folder", "가져오는 모든 파일은 SKILL.md가 있는 폴더 안에 있어야 합니다"));
     }
   }
   return { files, manifestPath };
@@ -879,12 +903,13 @@ function normalizeSkillImportFiles(value: unknown): {
 async function importStudioSkillFolder(
   root: string,
   payload: unknown,
+  lang: StudioLanguage,
 ): Promise<AgentSkill> {
   if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
     throw new ApiError(400, "INVALID_SKILL_IMPORT", "Skill import payload must be an object");
   }
   const record = payload as Record<string, unknown>;
-  const { files, manifestPath } = normalizeSkillImportFiles(record.files);
+  const { files, manifestPath } = normalizeSkillImportFiles(record.files, lang);
   const manifest = files.find((file) => file.path === manifestPath)!;
   let parsed: AgentSkill;
   try {
@@ -903,7 +928,7 @@ async function importStudioSkillFolder(
   const targetDir = projectSkillDir(root, parsed.id);
   try {
     await access(targetDir);
-    throw new ApiError(409, "SKILL_EXISTS", `Project skill already exists: ${parsed.id}`);
+    throw new ApiError(409, "SKILL_EXISTS", pick(lang, `项目技能已存在：${parsed.id}`, `Project skill already exists: ${parsed.id}`, `프로젝트 스킬이 이미 있습니다: ${parsed.id}`));
   } catch (error) {
     if (error instanceof ApiError) throw error;
     if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
@@ -985,6 +1010,7 @@ function validateAgentActionExecution(args: {
       lang,
       `已确认动作 ${binding.actionId}，但模型没有执行对应 capability action。请重试或检查模型工具调用支持。`,
       `Action ${binding.actionId} was confirmed, but the model did not execute the matching capability action. Retry or check model tool-call support.`,
+      `작업 ${binding.actionId}이(가) 확인되었지만 모델이 해당 capability action을 실행하지 않았습니다. 다시 시도하거나 모델의 도구 호출 지원 여부를 확인하세요.`,
     );
   }
 
@@ -1005,7 +1031,7 @@ function formatAgentFailure(
   }
   return {
     code: "INKOS_ACTION_ERROR",
-    message: pick(lang, `InkOS 动作失败：${message}`, `InkOS action failed: ${message}`),
+    message: pick(lang, `InkOS 动作失败：${message}`, `InkOS action failed: ${message}`, `InkOS 작업 실패: ${message}`),
     status: 500,
   };
 }
@@ -1107,7 +1133,7 @@ function requirePayloadText(value: string | undefined, message: string): string 
 
 function toolResultText(result: unknown, lang: StudioLanguage = "zh"): string {
   const text = extractToolError(result).trim();
-  return text || pick(lang, "已完成。", "Done.");
+  return text || pick(lang, "已完成。", "Done.", "완료되었습니다.");
 }
 
 async function executeConfirmedProductionAction(args: {
@@ -1174,7 +1200,7 @@ async function executeConfirmedProductionAction(args: {
 
   if (args.requestedIntent === "create_book") {
     const payload = actionPayload?.createBook;
-    const title = requirePayloadText(payload?.title, pick(lang, "确认建书缺少书名，请重新生成确认卡。", "The book creation confirmation is missing a title. Regenerate the confirmation card."));
+    const title = requirePayloadText(payload?.title, pick(lang, "确认建书缺少书名，请重新生成确认卡。", "The book creation confirmation is missing a title. Regenerate the confirmation card.", "책 생성 확인에 제목이 없습니다. 확인 카드를 다시 생성하세요."));
     tool = createBookFoundationTool(args.pipeline, {
       language: lang,
       actionPayload,
@@ -1192,7 +1218,7 @@ async function executeConfirmedProductionAction(args: {
   } else if (args.requestedIntent === "short_run") {
     const payload = actionPayload?.shortRun;
     const direction = payload?.direction?.trim() || args.instruction.trim();
-    if (!direction) throw new ApiError(400, "CONFIRMED_ACTION_PAYLOAD_INCOMPLETE", pick(lang, "确认短篇缺少方向，请重新生成确认卡。", "The short fiction confirmation is missing a direction. Regenerate the confirmation card."));
+    if (!direction) throw new ApiError(400, "CONFIRMED_ACTION_PAYLOAD_INCOMPLETE", pick(lang, "确认短篇缺少方向，请重新生成确认卡。", "The short fiction confirmation is missing a direction. Regenerate the confirmation card.", "단편 확인에 방향이 없습니다. 확인 카드를 다시 생성하세요."));
     tool = createShortFictionRunTool(args.pipeline, args.root, {
       actionPayload,
       language: lang,
@@ -1208,7 +1234,7 @@ async function executeConfirmedProductionAction(args: {
     };
   } else if (args.requestedIntent === "write_next") {
     if (!args.bookId) {
-      throw new ApiError(400, "BOOK_ID_REQUIRED", pick(lang, "写下一章需要先打开一本书。", "Writing the next chapter requires an active book."));
+      throw new ApiError(400, "BOOK_ID_REQUIRED", pick(lang, "写下一章需要先打开一本书。", "Writing the next chapter requires an active book.", "다음 챕터를 쓰려면 먼저 책을 열어야 합니다."));
     }
     const chapterCount = actionPayload?.writeNext?.chapterCount ?? 1;
     tool = createWriteChaptersTool(args.pipeline, args.bookId, {
@@ -1226,7 +1252,7 @@ async function executeConfirmedProductionAction(args: {
     };
   } else if (args.requestedIntent === "generate_cover") {
     const payload = actionPayload?.generateCover;
-    const title = requirePayloadText(payload?.title, pick(lang, "确认生成封面缺少标题，请重新生成确认卡。", "The cover generation confirmation is missing a title. Regenerate the confirmation card."));
+    const title = requirePayloadText(payload?.title, pick(lang, "确认生成封面缺少标题，请重新生成确认卡。", "The cover generation confirmation is missing a title. Regenerate the confirmation card.", "표지 생성 확인에 제목이 없습니다. 확인 카드를 다시 생성하세요."));
     tool = createGenerateCoverTool(args.root, { actionPayload });
     params = {
       title,
@@ -1237,7 +1263,7 @@ async function executeConfirmedProductionAction(args: {
     };
   } else if (args.requestedIntent === "script_create") {
     const payload = actionPayload?.scriptCreate;
-    const title = requirePayloadText(payload?.title, pick(lang, "确认创建剧本缺少标题，请重新生成确认卡。", "The script creation confirmation is missing a title. Regenerate the confirmation card."));
+    const title = requirePayloadText(payload?.title, pick(lang, "确认创建剧本缺少标题，请重新生成确认卡。", "The script creation confirmation is missing a title. Regenerate the confirmation card.", "대본 작성 확인에 제목이 없습니다. 확인 카드를 다시 생성하세요."));
     tool = createScriptCreationTool(args.pipeline, args.root, {
       actionPayload,
       language: lang,
@@ -1257,7 +1283,7 @@ async function executeConfirmedProductionAction(args: {
     };
   } else if (args.requestedIntent === "storyboard_create") {
     const payload = actionPayload?.storyboardCreate;
-    const title = requirePayloadText(payload?.title, pick(lang, "确认创建分镜缺少标题，请重新生成确认卡。", "The storyboard creation confirmation is missing a title. Regenerate the confirmation card."));
+    const title = requirePayloadText(payload?.title, pick(lang, "确认创建分镜缺少标题，请重新生成确认卡。", "The storyboard creation confirmation is missing a title. Regenerate the confirmation card.", "스토리보드 작성 확인에 제목이 없습니다. 확인 카드를 다시 생성하세요."));
     tool = createStoryboardCreationTool(args.pipeline, args.root, {
       actionPayload,
       language: lang,
@@ -1278,7 +1304,7 @@ async function executeConfirmedProductionAction(args: {
     };
   } else if (args.requestedIntent === "interactive_film_create") {
     const payload = actionPayload?.interactiveFilmCreate;
-    const title = requirePayloadText(payload?.title, pick(lang, "确认创建互动影游缺少标题，请重新生成确认卡。", "The interactive film confirmation is missing a title. Regenerate the confirmation card."));
+    const title = requirePayloadText(payload?.title, pick(lang, "确认创建互动影游缺少标题，请重新生成确认卡。", "The interactive film confirmation is missing a title. Regenerate the confirmation card.", "인터랙티브 필름 확인에 제목이 없습니다. 확인 카드를 다시 생성하세요."));
     tool = createInteractiveFilmCreationTool(args.pipeline, args.root, {
       actionPayload,
       language: lang,
@@ -1301,9 +1327,9 @@ async function executeConfirmedProductionAction(args: {
   } else if (args.requestedIntent === "translation_create") {
     const payload = actionPayload?.translationCreate;
     const filePath = payload?.filePath;
-    if (!filePath && !payload?.sourceText) throw new ApiError(400, "TRANSLATION_SOURCE_REQUIRED", "Provide source text or a source file");
-    const sourceLanguage = requirePayloadText(payload?.sourceLanguage, pick(lang, "确认创建翻译项目缺少源语言，请重新生成确认卡。", "The translation confirmation is missing a source language. Regenerate the confirmation card."));
-    const targetLanguage = requirePayloadText(payload?.targetLanguage, pick(lang, "确认创建翻译项目缺少目标语言，请重新生成确认卡。", "The translation confirmation is missing a target language. Regenerate the confirmation card."));
+    if (!filePath && !payload?.sourceText) throw new ApiError(400, "TRANSLATION_SOURCE_REQUIRED", pick(lang, "请提供源文本或源文件。", "Provide source text or a source file", "원문 텍스트나 원본 파일을 제공하세요."));
+    const sourceLanguage = requirePayloadText(payload?.sourceLanguage, pick(lang, "确认创建翻译项目缺少源语言，请重新生成确认卡。", "The translation confirmation is missing a source language. Regenerate the confirmation card.", "번역 프로젝트 확인에 원본 언어가 없습니다. 확인 카드를 다시 생성하세요."));
+    const targetLanguage = requirePayloadText(payload?.targetLanguage, pick(lang, "确认创建翻译项目缺少目标语言，请重新生成确认卡。", "The translation confirmation is missing a target language. Regenerate the confirmation card.", "번역 프로젝트 확인에 대상 언어가 없습니다. 확인 카드를 다시 생성하세요."));
     tool = createTranslationCreateTool(args.root, { actionPayload });
     params = {
       filePath, sourceText: payload?.sourceText, glossary: payload?.glossary,
@@ -1314,9 +1340,9 @@ async function executeConfirmedProductionAction(args: {
     };
   } else if (args.requestedIntent === "fanfic_init") {
     const payload = actionPayload?.fanficCreate;
-    const title = requirePayloadText(payload?.title, pick(lang, "确认创建同人缺少书名，请补充后重新确认。", "The fanfiction confirmation is missing a title."));
+    const title = requirePayloadText(payload?.title, pick(lang, "确认创建同人缺少书名，请补充后重新确认。", "The fanfiction confirmation is missing a title.", "팬픽 작성 확인에 제목이 없습니다. 제목을 입력한 뒤 다시 확인하세요."));
     if (!payload?.source && !payload?.sourceText?.trim() && !payload?.sourcePath?.trim()) {
-      throw new ApiError(400, "CONFIRMED_ACTION_PAYLOAD_INCOMPLETE", pick(lang, "创建同人需要原作资料或上传文件。", "Fanfiction creation requires source material or an uploaded file."));
+      throw new ApiError(400, "CONFIRMED_ACTION_PAYLOAD_INCOMPLETE", pick(lang, "创建同人需要原作资料或上传文件。", "Fanfiction creation requires source material or an uploaded file.", "팬픽을 만들려면 원작 자료나 업로드한 파일이 필요합니다."));
     }
     tool = createFanficBookTool(args.pipeline, args.root, {
       defaultSkills: mergeActivatedSkillGuidance(
@@ -1339,10 +1365,10 @@ async function executeConfirmedProductionAction(args: {
     };
   } else if (args.requestedIntent === "continuation_import") {
     const payload = actionPayload?.continuationImport;
-    const sourcePath = requirePayloadText(payload?.sourcePath, pick(lang, "导入续写需要上传文件或章节目录。", "Continuation import requires an uploaded file or chapter directory."));
+    const sourcePath = requirePayloadText(payload?.sourcePath, pick(lang, "导入续写需要上传文件或章节目录。", "Continuation import requires an uploaded file or chapter directory.", "이어쓰기를 가져오려면 파일을 업로드하거나 챕터 폴더를 지정해야 합니다."));
     const targetBookId = payload?.bookId ?? args.bookId ?? undefined;
     if (!targetBookId && !payload?.title?.trim()) {
-      throw new ApiError(400, "CONFIRMED_ACTION_PAYLOAD_INCOMPLETE", pick(lang, "导入续写需要选择已有书籍或填写新书名。", "Continuation import requires an existing book or a new title."));
+      throw new ApiError(400, "CONFIRMED_ACTION_PAYLOAD_INCOMPLETE", pick(lang, "导入续写需要选择已有书籍或填写新书名。", "Continuation import requires an existing book or a new title.", "이어쓰기를 가져오려면 기존 책을 선택하거나 새 책 제목을 입력해야 합니다."));
     }
     tool = createContinuationImportTool(args.pipeline, args.bookId, args.root, {
       defaultSkills: mergeActivatedSkillGuidance(
@@ -1366,8 +1392,8 @@ async function executeConfirmedProductionAction(args: {
     };
   } else if (args.requestedIntent === "spinoff_create") {
     const payload = actionPayload?.spinoffCreate;
-    const title = requirePayloadText(payload?.title, pick(lang, "确认创建番外缺少书名。", "The side-story confirmation is missing a title."));
-    const parentBookId = requirePayloadText(payload?.parentBookId ?? args.bookId ?? undefined, pick(lang, "创建番外需要指定正传书籍。", "Side-story creation requires a parent book."));
+    const title = requirePayloadText(payload?.title, pick(lang, "确认创建番外缺少书名。", "The side-story confirmation is missing a title.", "외전 작성 확인에 제목이 없습니다."));
+    const parentBookId = requirePayloadText(payload?.parentBookId ?? args.bookId ?? undefined, pick(lang, "创建番外需要指定正传书籍。", "Side-story creation requires a parent book.", "외전을 만들려면 본편 책을 지정해야 합니다."));
     tool = createSpinoffBookTool(args.pipeline, args.root, {
       defaultSkills: mergeActivatedSkillGuidance(
         profileSkills("longform-novel"),
@@ -1387,10 +1413,10 @@ async function executeConfirmedProductionAction(args: {
     };
   } else if (args.requestedIntent === "style_imitation") {
     const payload = actionPayload?.imitationCreate;
-    const title = requirePayloadText(payload?.title, pick(lang, "确认创建仿写缺少书名。", "The imitation confirmation is missing a title."));
-    const storyIdea = requirePayloadText(payload?.storyIdea, pick(lang, "仿写需要一个原创故事方向。", "Style imitation requires an original story idea."));
+    const title = requirePayloadText(payload?.title, pick(lang, "确认创建仿写缺少书名。", "The imitation confirmation is missing a title.", "문체 모방 확인에 제목이 없습니다."));
+    const storyIdea = requirePayloadText(payload?.storyIdea, pick(lang, "仿写需要一个原创故事方向。", "Style imitation requires an original story idea.", "문체 모방에는 독창적인 이야기 방향이 필요합니다."));
     if (!payload?.source && !payload?.referenceText?.trim() && !payload?.referencePath?.trim()) {
-      throw new ApiError(400, "CONFIRMED_ACTION_PAYLOAD_INCOMPLETE", pick(lang, "仿写需要参考文本或上传文件。", "Style imitation requires reference text or an uploaded file."));
+      throw new ApiError(400, "CONFIRMED_ACTION_PAYLOAD_INCOMPLETE", pick(lang, "仿写需要参考文本或上传文件。", "Style imitation requires reference text or an uploaded file.", "문체 모방에는 참고 텍스트나 업로드한 파일이 필요합니다."));
     }
     tool = createImitationBookTool(args.pipeline, args.root, {
       defaultSkills: mergeActivatedSkillGuidance(
@@ -1413,7 +1439,7 @@ async function executeConfirmedProductionAction(args: {
     };
   } else if (args.requestedIntent === "play_start") {
     const payload = actionPayload?.playStart;
-    const title = requirePayloadText(payload?.title, pick(lang, "确认启动互动世界缺少标题，请重新生成确认卡。", "The interactive world start confirmation is missing a title. Regenerate the confirmation card."));
+    const title = requirePayloadText(payload?.title, pick(lang, "确认启动互动世界缺少标题，请重新生成确认卡。", "The interactive world start confirmation is missing a title. Regenerate the confirmation card.", "인터랙티브 월드 시작 확인에 제목이 없습니다. 확인 카드를 다시 생성하세요."));
     const fallbackScene = [payload?.premise, args.instruction].filter((part): part is string => typeof part === "string" && part.trim().length > 0).join("\n\n");
     const initialScene = payload?.initialScene?.trim() || fallbackScene.trim();
     const confirmedActionPayload: ActionPayload | undefined = actionPayload
@@ -1443,7 +1469,7 @@ async function executeConfirmedProductionAction(args: {
   } else if (args.requestedIntent === "draft_structure") {
     const payload = actionPayload?.draftStructure;
     const projectId = payload?.projectId ?? args.bookId;
-    if (!projectId) throw new ApiError(400, "INVALID_ID", "interactive-film action requires a project id (bookId)");
+    if (!projectId) throw new ApiError(400, "INVALID_ID", pick(lang, "互动影游动作需要项目 ID（bookId）。", "interactive-film action requires a project id (bookId)", "인터랙티브 필름 작업에는 프로젝트 ID(bookId)가 필요합니다."));
     const agentCtx = args.pipeline.createAgentContext("film-authoring", projectId);
     const deps = filmLLMDepsFromClient(agentCtx.client, agentCtx.model, {
       activatedSkills: () => profileSkills("interactive-film"),
@@ -1455,10 +1481,10 @@ async function executeConfirmedProductionAction(args: {
   } else if (args.requestedIntent === "connect_choice") {
     const payload = actionPayload?.connectChoice;
     if (!payload?.node) {
-      throw new ApiError(400, "CONFIRMED_ACTION_PAYLOAD_INCOMPLETE", pick(lang, "确认连接选择缺少节点数据，请重新生成确认卡。", "The connect-choice confirmation is missing node data. Regenerate the confirmation card."));
+      throw new ApiError(400, "CONFIRMED_ACTION_PAYLOAD_INCOMPLETE", pick(lang, "确认连接选择缺少节点数据，请重新生成确认卡。", "The connect-choice confirmation is missing node data. Regenerate the confirmation card.", "선택지 연결 확인에 노드 데이터가 없습니다. 확인 카드를 다시 생성하세요."));
     }
     const projectId = payload?.projectId ?? args.bookId;
-    if (!projectId) throw new ApiError(400, "INVALID_ID", "interactive-film action requires a project id (bookId)");
+    if (!projectId) throw new ApiError(400, "INVALID_ID", pick(lang, "互动影游动作需要项目 ID（bookId）。", "interactive-film action requires a project id (bookId)", "인터랙티브 필름 작업에는 프로젝트 ID(bookId)가 필요합니다."));
     tool = createConnectChoiceTool(args.root, projectId);
     params = {
       node: payload.node,
@@ -1466,10 +1492,10 @@ async function executeConfirmedProductionAction(args: {
   } else if (args.requestedIntent === "remove_node") {
     const payload = actionPayload?.removeNode;
     if (!payload?.nodeId) {
-      throw new ApiError(400, "CONFIRMED_ACTION_PAYLOAD_INCOMPLETE", pick(lang, "确认删除节点缺少 nodeId，请重新生成确认卡。", "The remove-node confirmation is missing a nodeId. Regenerate the confirmation card."));
+      throw new ApiError(400, "CONFIRMED_ACTION_PAYLOAD_INCOMPLETE", pick(lang, "确认删除节点缺少 nodeId，请重新生成确认卡。", "The remove-node confirmation is missing a nodeId. Regenerate the confirmation card.", "노드 삭제 확인에 nodeId가 없습니다. 확인 카드를 다시 생성하세요."));
     }
     const projectId = payload?.projectId ?? args.bookId;
-    if (!projectId) throw new ApiError(400, "INVALID_ID", "interactive-film action requires a project id (bookId)");
+    if (!projectId) throw new ApiError(400, "INVALID_ID", pick(lang, "互动影游动作需要项目 ID（bookId）。", "interactive-film action requires a project id (bookId)", "인터랙티브 필름 작업에는 프로젝트 ID(bookId)가 필요합니다."));
     tool = createRemoveNodeTool(args.root, projectId);
     params = {
       nodeId: payload.nodeId,
@@ -2131,7 +2157,7 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: str
       promise,
       new Promise<never>((_, reject) => {
         timeout = setTimeout(
-          () => reject(new Error(pick(lang, `${label} 超时（${timeoutMs}ms）`, `${label} timed out (${timeoutMs}ms)`))),
+          () => reject(new Error(pick(lang, `${label} 超时（${timeoutMs}ms）`, `${label} timed out (${timeoutMs}ms)`, `${label} 시간 초과(${timeoutMs}ms)`))),
           timeoutMs,
         );
       }),
@@ -2164,42 +2190,46 @@ function formatServiceProbeError(args: {
       ? "Responses"
       : "Chat / Completions";
   const streamSuffix = typeof args.stream === "boolean"
-    ? pick(lang, `，${args.stream ? "流式" : "非流式"}`, `, ${args.stream ? "streaming" : "non-streaming"}`)
+    ? pick(lang, `，${args.stream ? "流式" : "非流式"}`, `, ${args.stream ? "streaming" : "non-streaming"}`, `, ${args.stream ? "스트리밍" : "비스트리밍"}`)
     : "";
   const context = [
-    pick(lang, `服务商：${args.label ?? args.service}`, `Service: ${args.label ?? args.service}`),
-    pick(lang, `测试模型：${args.model ?? "未确定"}`, `Test model: ${args.model ?? "undetermined"}`),
-    pick(lang, `协议：${protocol}${streamSuffix}`, `Protocol: ${protocol}${streamSuffix}`),
-    pick(lang, `Base URL：${args.baseUrl}`, `Base URL: ${args.baseUrl}`),
+    pick(lang, `服务商：${args.label ?? args.service}`, `Service: ${args.label ?? args.service}`, `서비스: ${args.label ?? args.service}`),
+    pick(lang, `测试模型：${args.model ?? "未确定"}`, `Test model: ${args.model ?? "undetermined"}`, `테스트 모델: ${args.model ?? "미정"}`),
+    pick(lang, `协议：${protocol}${streamSuffix}`, `Protocol: ${protocol}${streamSuffix}`, `프로토콜: ${protocol}${streamSuffix}`),
+    pick(lang, `Base URL：${args.baseUrl}`, `Base URL: ${args.baseUrl}`, `Base URL: ${args.baseUrl}`),
   ].join("\n");
   const upstreamPrefix = (detail: string): string =>
-    pick(lang, `\n上游返回：${detail}`, `\nUpstream response: ${detail}`);
+    pick(lang, `\n上游返回：${detail}`, `\nUpstream response: ${detail}`, `\n업스트림 응답: ${detail}`);
 
   if (args.service === "google") {
     return [
-      pick(lang, "Google Gemini 测试连接失败。", "Google Gemini connection test failed."),
+      pick(lang, "Google Gemini 测试连接失败。", "Google Gemini connection test failed.", "Google Gemini 연결 테스트에 실패했습니다."),
       context,
       "",
-      pick(lang, "请优先检查：", "Check these first:"),
+      pick(lang, "请优先检查：", "Check these first:", "먼저 다음을 확인하세요:"),
       pick(
         lang,
         "1. API Key 是否来自 Google AI Studio 的 Gemini API key，而不是 OAuth、Vertex AI 或其它 Google 服务凭据。",
         "1. The API Key is a Gemini API key from Google AI Studio, not an OAuth, Vertex AI, or other Google service credential.",
+        "1. API 키가 OAuth, Vertex AI 등 다른 Google 서비스 자격 증명이 아니라 Google AI Studio에서 발급한 Gemini API 키인지 확인하세요.",
       ),
       pick(
         lang,
         "2. 该 key 所属项目是否已启用 Gemini API，并且没有被限制到其它 API、来源或服务。",
         "2. The key's project has the Gemini API enabled and is not restricted to other APIs, origins, or services.",
+        "2. 키가 속한 프로젝트에서 Gemini API가 활성화되어 있고 다른 API·출처·서비스로 제한되어 있지 않은지 확인하세요.",
       ),
       pick(
         lang,
         "3. 当前地区/账号是否允许访问 Gemini API。",
         "3. Your region/account is allowed to access the Gemini API.",
+        "3. 현재 지역·계정에서 Gemini API에 접근할 수 있는지 확인하세요.",
       ),
       pick(
         lang,
         "4. 如果 key 曾经泄露，请在 AI Studio 重新生成后再保存。",
         "4. If the key was ever leaked, regenerate it in AI Studio before saving.",
+        "4. 키가 유출된 적이 있다면 AI Studio에서 새로 발급한 뒤 저장하세요.",
       ),
       upstreamDetail ? upstreamPrefix(upstreamDetail) : "",
     ].filter(Boolean).join("\n");
@@ -2207,26 +2237,28 @@ function formatServiceProbeError(args: {
 
   if (args.service === "moonshot" || args.service === "kimiCodingPlan" || args.service === "kimicode") {
     return [
-      pick(lang, `${args.label ?? args.service} 测试连接失败。`, `${args.label ?? args.service} connection test failed.`),
+      pick(lang, `${args.label ?? args.service} 测试连接失败。`, `${args.label ?? args.service} connection test failed.`, `${args.label ?? args.service} 연결 테스트에 실패했습니다.`),
       context,
       "",
       pick(
         lang,
         "请优先检查模型是否可用，以及 kimi-k2.x 这类模型是否需要 temperature=1。",
         "Check first whether the model is available, and whether models like kimi-k2.x require temperature=1.",
+        "먼저 모델을 사용할 수 있는지, kimi-k2.x 같은 모델에 temperature=1이 필요한지 확인하세요.",
       ),
       rawDetail ? upstreamPrefix(rawDetail) : "",
     ].filter(Boolean).join("\n");
   }
 
   return [
-    pick(lang, `${args.label ?? args.service} 测试连接失败。`, `${args.label ?? args.service} connection test failed.`),
+    pick(lang, `${args.label ?? args.service} 测试连接失败。`, `${args.label ?? args.service} connection test failed.`, `${args.label ?? args.service} 연결 테스트에 실패했습니다.`),
     context,
     "",
     pick(
       lang,
       "请检查 API Key、模型可用性、账号额度，以及协议类型是否匹配该服务商。",
       "Check the API Key, model availability, account quota, and whether the protocol type matches this service.",
+      "API 키, 모델 사용 가능 여부, 계정 사용 한도, 프로토콜 유형이 이 서비스와 맞는지 확인하세요.",
     ),
     rawDetail ? upstreamPrefix(rawDetail) : "",
   ].filter(Boolean).join("\n");
@@ -2259,6 +2291,7 @@ async function fetchModelsFromServiceBaseUrl(
           lang,
           `服务商返回 ${res.status}: ${body}`,
           `Service returned ${res.status}: ${body}`,
+          `서비스 응답 ${res.status}: ${body}`,
         ),
         authFailed: res.status === 401 || res.status === 403,
       };
@@ -2283,6 +2316,7 @@ function buildBearerAuthHeaders(apiKey: string | undefined, lang: StudioLanguage
       lang,
       "API Key 只能包含英文、数字和常见 ASCII 符号，请检查是否误粘贴了中文说明。",
       "API Key may only contain ASCII letters, digits, and common symbols. Check whether you pasted explanatory text by mistake.",
+      "API 키에는 영문자, 숫자, 일반 ASCII 기호만 쓸 수 있습니다. 설명 문구를 잘못 붙여 넣지 않았는지 확인하세요.",
     ));
   }
   return { Authorization: `Bearer ${trimmed}` };
@@ -2319,6 +2353,7 @@ async function probeServiceCapabilities(args: {
         lang,
         "API Key 无效或无权访问模型列表。",
         "API Key is invalid or has no access to the model list.",
+        "API 키가 올바르지 않거나 모델 목록에 접근할 권한이 없습니다.",
       ),
     };
   }
@@ -2337,6 +2372,7 @@ async function probeServiceCapabilities(args: {
           lang,
           "模型列表可访问，但没有发现可用于文本对话的模型。",
           "The model list is reachable, but no model usable for text chat was found.",
+          "모델 목록에는 접근할 수 있지만 텍스트 대화에 쓸 수 있는 모델을 찾지 못했습니다.",
         ),
       };
     }
@@ -2402,11 +2438,12 @@ async function probeServiceCapabilities(args: {
         lang,
         "无法自动确定模型，请先填写可用模型或提供支持 /models 的服务端点。",
         "Could not determine a model automatically. Fill in an available model first, or provide a service endpoint that supports /models.",
+        "모델을 자동으로 정하지 못했습니다. 사용할 수 있는 모델을 먼저 입력하거나 /models를 지원하는 서비스 엔드포인트를 지정하세요.",
       ),
     };
   }
 
-  let lastError = modelsResponse.error ?? pick(lang, "自动探测失败", "Automatic probing failed");
+  let lastError = modelsResponse.error ?? pick(lang, "自动探测失败", "Automatic probing failed", "자동 탐지 실패");
 
   for (const model of modelCandidates) {
     for (const plan of buildProbePlans(args.preferredApiFormat, args.preferredStream)) {
@@ -2496,12 +2533,18 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
     const live = chatRequests.get(sessionId);
     if (live) return live.snapshot;
     const saved = await chatRequestStore.load(sessionId);
+    const interruptedLang = saved?.status === "running" ? await currentProjectLanguage() : "zh";
     // Recheck after I/O: a new request may have acquired the session meanwhile.
     if (chatRequests.has(sessionId)) return chatRequests.get(sessionId)!.snapshot;
     if (!saved || saved.status !== "running") return saved;
     return { ...saved, status: "failed" as const, error: {
       code: "CHAT_REQUEST_INTERRUPTED",
-      message: "Studio restarted before this request finished. Continue from the saved results.",
+      message: pick(
+        interruptedLang,
+        "请求完成前 Studio 已重启。请从已保存的结果继续。",
+        "Studio restarted before this request finished. Continue from the saved results.",
+        "요청이 끝나기 전에 Studio가 다시 시작되었습니다. 저장된 결과에서 이어서 진행하세요.",
+      ),
     } };
   };
   // 确认式生产任务的单任务名额（sessionId → taskId）。原来的检查是"await 读快照
@@ -2574,6 +2617,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
           lang,
           "任务已中断：Studio 服务在任务运行期间重启，任务未能继续。请重新发起。",
           "Task interrupted: the Studio server restarted while this task was running. Please start it again.",
+          "작업이 중단되었습니다. 작업 실행 중 Studio 서버가 다시 시작되어 이어서 진행할 수 없습니다. 작업을 다시 시작하세요.",
         ),
         completedAt,
       },
@@ -2624,7 +2668,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
   app.use("/*", cors({ origin: origin => origin || undefined }));
 
   // Structured error handler — ApiError returns typed JSON, others return 500
-  app.onError((error, c) => {
+  app.onError(async (error, c) => {
     if (error instanceof ApiError) {
       return c.json({ error: { code: error.code, message: error.message } }, error.status as 400);
     }
@@ -2633,7 +2677,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
     }
     console.error("[studio] Unexpected server error", { method: c.req.method, path: new URL(c.req.url).pathname, aborted: c.req.raw.signal.aborted }, error);
     return c.json(
-      { error: { code: "INTERNAL_ERROR", message: "Unexpected server error." } },
+      { error: { code: "INTERNAL_ERROR", message: pick(await currentProjectLanguage(), "服务器发生意外错误。", "Unexpected server error.", "서버에서 예기치 않은 오류가 발생했습니다.") } },
       500,
     );
   });
@@ -2795,7 +2839,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
       const work = await loadWorkManifest(root, id);
       const artifact = work.artifacts.find((candidate) => candidate.id === c.req.param("artifactId"));
       const revision = artifact?.revisions.find((candidate) => candidate.id === c.req.param("revisionId"));
-      if (!artifact || !revision) return c.json({ error: "Artifact revision not found" }, 404);
+      if (!artifact || !revision) return c.json({ error: pick(await currentProjectLanguage(), "未找到产物修订版本", "Artifact revision not found", "결과물 수정본을 찾을 수 없습니다") }, 404);
       const bytes = await readFile(safeChildPath(workDirectory(root, id), revision.snapshotPath ?? revision.path));
       if (`sha256:${createHash("sha256").update(bytes).digest("hex")}` !== revision.checksum) throw new ApiError(409, "ARTIFACT_SNAPSHOT_UNAVAILABLE", "Revision content does not match its recorded checksum");
       const textLike = revision.contentType.startsWith("text/")
@@ -2835,14 +2879,14 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
   app.get("/api/v1/profiles", async (c) => c.json({ profiles: createBuiltInWorkProfileRegistry(root).list() }));
   app.post("/api/v1/profiles", async (c) => {
     const profile = WorkProfileSchema.parse(await c.req.json());
-    if (createBuiltInWorkProfileRegistry(root).get(profile.id)) throw new ApiError(409, "PROFILE_EXISTS", "Choose a new profile ID");
+    if (createBuiltInWorkProfileRegistry(root).get(profile.id)) throw new ApiError(409, "PROFILE_EXISTS", pick(await currentProjectLanguage(), "该类型 ID 已存在，请更换新的 ID", "Choose a new profile ID", "이미 있는 유형 ID입니다. 새 ID로 바꾸세요"));
     await commitAtomicFileSet({ rootDir: root, writes: [{ relativePath: `.inkos/profiles/${profile.id}.json`, content: JSON.stringify(profile, null, 2) }] });
     return c.json({ profile }, 201);
   });
 
   app.put("/api/v1/profiles/:id", async (c) => {
     const profile = WorkProfileSchema.parse(await c.req.json());
-    if (profile.id !== c.req.param("id")) throw new ApiError(400, "PROFILE_ID_MISMATCH", "Profile identity cannot change");
+    if (profile.id !== c.req.param("id")) throw new ApiError(400, "PROFILE_ID_MISMATCH", pick(await currentProjectLanguage(), "作品配置的 ID 不能更改", "Profile identity cannot change", "작품 설정의 ID는 바꿀 수 없습니다"));
     await commitAtomicFileSet({ rootDir: root, writes: [{ relativePath: `.inkos/profiles/${profile.id}.json`, content: JSON.stringify(profile, null, 2) }] });
     return c.json({ profile });
   });
@@ -2893,7 +2937,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
       const nextChapter = await state.getNextChapterNumber(id);
       return c.json({ book, chapters, nextChapter });
     } catch {
-      return c.json({ error: `Book "${id}" not found` }, 404);
+      return c.json({ error: pick(await currentProjectLanguage(), `未找到书籍“${id}”`, `Book "${id}" not found`, `책 "${id}"을(를) 찾을 수 없습니다`) }, 404);
     }
   });
 
@@ -2916,10 +2960,10 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
     const bookDir = state.bookDir(bookId);
 
     if (!bookId) {
-      return c.json({ error: "Could not derive a valid book id from title" }, 400);
+      return c.json({ error: pick(await currentProjectLanguage(), "无法根据书名生成有效的书籍 ID", "Could not derive a valid book id from title", "제목으로 올바른 책 ID를 만들 수 없습니다") }, 400);
     }
     if (await completeBookExists(bookDir)) {
-      return c.json({ error: `Book "${bookId}" already exists` }, 409);
+      return c.json({ error: pick(await currentProjectLanguage(), `书籍“${bookId}”已存在`, `Book "${bookId}" already exists`, `책 "${bookId}"이(가) 이미 있습니다`) }, 409);
     }
 
     broadcast("book:creating", { bookId, title: body.title });
@@ -2961,13 +3005,13 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
         const details = result.data as Readonly<Record<string, unknown>> | undefined;
         const createdBookId = resolveCreatedBookIdFromDetails(details);
         if (!createdBookId) {
-          const error = "Book creation did not produce a completed book artifact.";
+          const error = pick(await currentProjectLanguage(), "建书没有生成完整的书籍产物。", "Book creation did not produce a completed book artifact.", "책 생성이 완성된 책 결과물을 만들지 못했습니다.");
           bookCreateStatus.set(bookId, { status: "error", error });
           broadcast("book:error", { bookId, error });
           return;
         }
         if (!await completeBookExists(join(workDirectory(root, createdBookId), "source"))) {
-          const error = "Book creation artifact is incomplete on disk.";
+          const error = pick(await currentProjectLanguage(), "磁盘上的建书产物不完整。", "Book creation artifact is incomplete on disk.", "디스크에 저장된 책 생성 결과물이 완전하지 않습니다.");
           bookCreateStatus.set(createdBookId, { status: "error", error });
           broadcast("book:error", { bookId: createdBookId, error });
           return;
@@ -3015,11 +3059,11 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
       const files = await readdir(chaptersDir);
       const paddedNum = String(num).padStart(4, "0");
       const match = files.find((f) => f.startsWith(paddedNum) && f.endsWith(".md"));
-      if (!match) return c.json({ error: "Chapter not found" }, 404);
+      if (!match) return c.json({ error: pick(await currentProjectLanguage(), "未找到章节", "Chapter not found", "챕터를 찾을 수 없습니다") }, 404);
       const content = await readFile(join(chaptersDir, match), "utf-8");
       return c.json({ chapterNumber: num, filename: match, content });
     } catch {
-      return c.json({ error: "Chapter not found" }, 404);
+      return c.json({ error: pick(await currentProjectLanguage(), "未找到章节", "Chapter not found", "챕터를 찾을 수 없습니다") }, 404);
     }
   });
 
@@ -3079,7 +3123,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
       const paddedNum = String(num).padStart(4, "0");
       const chapterFile = files.find((file) => file.startsWith(paddedNum) && file.endsWith(".md"));
       if (!chapterFile) {
-        return c.json({ error: "Chapter not found" }, 404);
+        return c.json({ error: pick(await currentProjectLanguage(), "未找到章节", "Chapter not found", "챕터를 찾을 수 없습니다") }, 404);
       }
       const [chapter, persistedBrief, plan, book, pipelineConfig] = await Promise.all([
         readFile(join(chaptersDir, chapterFile), "utf-8"),
@@ -3121,7 +3165,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
       );
       const card = response.content.trim();
       if (!card) {
-        throw new Error("The model returned an empty inspiration card");
+        throw new Error(pick(language, "模型返回了空的灵感卡", "The model returned an empty inspiration card", "모델이 빈 영감 카드를 반환했습니다"));
       }
       return c.json({ chapterNumber: num, card });
     } catch (e) {
@@ -3319,7 +3363,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
       const chapters = await state.loadChapterIndex(id);
       return c.json(computeAnalytics(id, chapters));
     } catch {
-      return c.json({ error: `Book "${id}" not found` }, 404);
+      return c.json({ error: pick(await currentProjectLanguage(), `未找到书籍“${id}”`, `Book "${id}" not found`, `책 "${id}"을(를) 찾을 수 없습니다`) }, 404);
     }
   });
 
@@ -3499,6 +3543,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
           await currentProjectLanguage(),
           "未检测到可导入的 LLM 环境变量配置，或缺少 INKOS_LLM_API_KEY。",
           "No importable LLM environment variable configuration was detected, or INKOS_LLM_API_KEY is missing.",
+          "가져올 수 있는 LLM 환경 변수 설정이 없거나 INKOS_LLM_API_KEY가 없습니다.",
         ),
       }, 400);
     }
@@ -3558,6 +3603,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
           await currentProjectLanguage(),
           "Studio 运行时不支持切换到 env；env 只在 CLI/daemon/部署运行时作为覆盖层使用。",
           "The Studio runtime does not support switching to env; env only acts as an override layer in the CLI/daemon/deployment runtimes.",
+          "Studio 런타임에서는 env로 전환할 수 없습니다. env는 CLI·데몬·배포 런타임에서만 덮어쓰기 계층으로 쓰입니다.",
         ),
       }, 400);
     }
@@ -3607,7 +3653,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
     const body = await c.req.json<{ service?: string; model?: string; baseUrl?: string }>();
     const preset = resolveCoverProviderPreset(body.service);
     if (!preset) {
-      return c.json({ error: "Unsupported cover service" }, 400);
+      return c.json({ error: pick(await currentProjectLanguage(), "不支持的封面服务", "Unsupported cover service", "지원하지 않는 표지 서비스입니다") }, 400);
     }
     const model = typeof body.model === "string" && preset.models.includes(body.model)
       ? body.model
@@ -3620,6 +3666,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
           await currentProjectLanguage(),
           "封面 Base URL 必须是有效的 HTTP(S) 地址，且不能包含账号、查询参数或锚点。",
           "Cover Base URL must be a valid HTTP(S) URL without credentials, query parameters, or fragments.",
+          "표지 Base URL은 계정 정보, 쿼리 매개변수, 앵커가 없는 올바른 HTTP(S) 주소여야 합니다.",
         ),
       }, 400);
     }
@@ -3639,7 +3686,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
   app.get("/api/v1/cover/secret/:service", async (c) => {
     const service = c.req.param("service");
     if (!resolveCoverProviderPreset(service)) {
-      return c.json({ error: "Unsupported cover service" }, 400);
+      return c.json({ error: pick(await currentProjectLanguage(), "不支持的封面服务", "Unsupported cover service", "지원하지 않는 표지 서비스입니다") }, 400);
     }
     const secrets = await loadSecrets(root);
     return c.json({ apiKey: secrets.services[coverSecretKey(service)]?.apiKey ?? "" });
@@ -3648,7 +3695,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
   app.put("/api/v1/cover/secret/:service", async (c) => {
     const service = c.req.param("service");
     if (!resolveCoverProviderPreset(service)) {
-      return c.json({ error: "Unsupported cover service" }, 400);
+      return c.json({ error: pick(await currentProjectLanguage(), "不支持的封面服务", "Unsupported cover service", "지원하지 않는 표지 서비스입니다") }, 400);
     }
     const body = await c.req.json<{ apiKey?: string }>();
     const trimmedKey = body.apiKey?.trim() ?? "";
@@ -3658,6 +3705,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
           await currentProjectLanguage(),
           "API Key 包含不能放入 HTTP Authorization header 的字符，请只粘贴原始密钥。",
           "API Key contains characters that cannot go into an HTTP Authorization header. Paste only the raw key.",
+          "API 키에 HTTP Authorization 헤더에 넣을 수 없는 문자가 있습니다. 원래 키만 붙여 넣으세요.",
         ),
       }, 400);
     }
@@ -3711,7 +3759,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
     if (!resolvedBaseUrl) {
       return c.json({
         ok: false,
-        error: pick(language, `未知服务商: ${service}`, `Unknown service: ${service}`),
+        error: pick(language, `未知服务商: ${service}`, `Unknown service: ${service}`, `알 수 없는 서비스: ${service}`),
       }, 400);
     }
 
@@ -3723,7 +3771,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
     if (!apiKey?.trim() && !apiKeyOptional) {
       return c.json({
         ok: false,
-        error: pick(language, "API Key 不能为空", "API Key must not be empty"),
+        error: pick(language, "API Key 不能为空", "API Key must not be empty", "API 키는 비워 둘 수 없습니다"),
       }, 400);
     }
 
@@ -3742,7 +3790,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
     });
 
     // B12: 升级响应 shape 为 { probe, chat, ... }，同时保留老字段供 UI 过渡期兼容
-    const connectionFailed = pick(language, "连接失败", "Connection failed");
+    const connectionFailed = pick(language, "连接失败", "Connection failed", "연결 실패");
     const probeStatus = {
       ok: probe.ok,
       models: probe.models?.length ?? 0,
@@ -3788,6 +3836,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
             await currentProjectLanguage(),
             "API Key 只能包含可放进 HTTP Authorization header 的非空白 ASCII 字符；请不要粘贴连接失败提示或诊断文本。",
             "API Key may only contain non-whitespace ASCII characters that fit in an HTTP Authorization header; do not paste connection failure hints or diagnostic text.",
+            "API 키에는 HTTP Authorization 헤더에 넣을 수 있는, 공백 없는 ASCII 문자만 쓸 수 있습니다. 연결 실패 안내나 진단 문구를 붙여 넣지 마세요.",
           ),
         }, 400);
       }
@@ -3978,7 +4027,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
     const id = normalizeStudioSkillId(c.req.param("skillId"), "skillId");
     const available = await loadAvailableAgentSkills({ projectRoot: root });
     const skill = new Map(available.skills.map(skill => [skill.id, skill])).get(id);
-    if (!skill?.baseDir) throw new ApiError(404, "SKILL_NOT_FOUND", "Skill documents unavailable");
+    if (!skill?.baseDir) throw new ApiError(404, "SKILL_NOT_FOUND", pick(await currentProjectLanguage(), "技能文档不可用", "Skill documents unavailable", "스킬 문서를 사용할 수 없습니다"));
     const documents: Array<{ path: string; content: string }> = [];
     const visit = async (directory: string) => {
       for (const entry of await readdir(directory, { withFileTypes: true })) {
@@ -3986,7 +4035,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
         if (entry.isSymbolicLink()) continue;
         if (entry.isDirectory()) await visit(path);
         else if (entry.isFile() && [".md", ".txt"].some(extension => entry.name.endsWith(extension))) {
-          if ((await stat(path)).size > MAX_SKILL_IMPORT_FILE_BYTES) throw new ApiError(413, "SKILL_FILE_TOO_LARGE", "Skill file exceeds editor limit");
+          if ((await stat(path)).size > MAX_SKILL_IMPORT_FILE_BYTES) throw new ApiError(413, "SKILL_FILE_TOO_LARGE", pick(await currentProjectLanguage(), "技能文件超出编辑器大小限制", "Skill file exceeds editor limit", "스킬 파일이 편집기 크기 제한을 넘습니다"));
           documents.push({ path: relative(skill.baseDir!, path).replaceAll("\\", "/"), content: await readFile(path, "utf8") });
         }
       }
@@ -3998,18 +4047,19 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
   app.put("/api/v1/skills/:skillId/documents", async (c) => {
     const id = normalizeStudioSkillId(c.req.param("skillId"), "skillId");
     const body = await c.req.json<{ documents: Array<{ path: string; content: string }> }>();
+    const lang = await currentProjectLanguage();
     const { files } = normalizeSkillImportFiles(body.documents.map(document => ({
       path: document.path, dataUrl: `data:text/plain;base64,${Buffer.from(document.content, "utf8").toString("base64")}`,
-    })));
+    })), lang);
     const manifest = files.find(file => file.path === "SKILL.md");
-    if (!manifest) throw new ApiError(400, "INVALID_SKILL_MANIFEST", "SKILL.md must be at the folder root");
+    if (!manifest) throw new ApiError(400, "INVALID_SKILL_MANIFEST", pick(lang, "SKILL.md 必须位于文件夹根目录", "SKILL.md must be at the folder root", "SKILL.md는 폴더 최상위에 있어야 합니다"));
     const parsed = parseAgentSkillDocument(manifest.buffer.toString("utf8"), { skillPath: projectSkillPath(root, id), source: "project" });
-    if (parsed.id !== id) throw new ApiError(400, "SKILL_ID_MISMATCH", "Skill identity cannot change");
+    if (parsed.id !== id) throw new ApiError(400, "SKILL_ID_MISMATCH", pick(lang, "技能 ID 不能更改", "Skill identity cannot change", "스킬 ID는 바꿀 수 없습니다"));
     for (const file of files) {
       let parent = projectSkillDir(root, id);
       for (const part of ["", ...file.path.split("/")]) {
         if (part) parent = join(parent, part);
-        try { if ((await lstat(parent)).isSymbolicLink()) throw new ApiError(400, "INVALID_SKILL_PATH", "Skill editor cannot follow symlinks"); }
+        try { if ((await lstat(parent)).isSymbolicLink()) throw new ApiError(400, "INVALID_SKILL_PATH", pick(lang, "技能编辑器不能跟随符号链接", "Skill editor cannot follow symlinks", "스킬 편집기는 심볼릭 링크를 따라갈 수 없습니다")); }
         catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; }
       }
     }
@@ -4023,7 +4073,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
     const payload = await c.req.json().catch(() => {
       throw new ApiError(400, "INVALID_SKILL_IMPORT", "Skill import payload must be JSON");
     });
-    const skill = await importStudioSkillFolder(root, payload);
+    const skill = await importStudioSkillFolder(root, payload, await currentProjectLanguage());
     return c.json({ skill: toStudioSkill(skill, root, new Set([skill.id])) });
   });
 
@@ -4032,7 +4082,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
     try {
       await access(projectSkillPath(root, id));
     } catch {
-      throw new ApiError(404, "SKILL_NOT_FOUND", `Project skill not found: ${id}`);
+      throw new ApiError(404, "SKILL_NOT_FOUND", pick(await currentProjectLanguage(), `未找到项目技能：${id}`, `Project skill not found: ${id}`, `프로젝트 스킬을 찾을 수 없습니다: ${id}`));
     }
     await rm(projectSkillDir(root, id), { recursive: true, force: true });
     return c.json({ ok: true });
@@ -4085,12 +4135,12 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
       throw new ApiError(400, "INVALID_PROJECT_ARTIFACT_PATH", "Artifact must belong to a Work");
     }
     const work = await loadWorkIfExists(root, workId);
-    if (!work) throw new ApiError(404, "WORK_NOT_FOUND", `Work not found: ${workId}`);
+    if (!work) throw new ApiError(404, "WORK_NOT_FOUND", pick(await currentProjectLanguage(), `未找到作品：${workId}`, `Work not found: ${workId}`, `작품을 찾을 수 없습니다: ${workId}`));
     const path = workPathParts.join("/");
     const artifact = work.artifacts.find((candidate) => candidate.revisions.some((revision) => (
       revision.id === candidate.currentRevisionId && revision.path === path
     )));
-    if (!artifact) throw new ApiError(409, "ARTIFACT_NOT_REGISTERED", `Current artifact is not registered: ${path}`);
+    if (!artifact) throw new ApiError(409, "ARTIFACT_NOT_REGISTERED", pick(await currentProjectLanguage(), `当前产物未登记：${path}`, `Current artifact is not registered: ${path}`, `현재 결과물이 등록되어 있지 않습니다: ${path}`));
     const result = await executeExplicitCapabilityTool({
       projectRoot: root,
       binding: { capabilityId: "workspace", actionId: "replace_work_artifact", profileId: work.profileId, risk: "recoverable-write" },
@@ -4229,7 +4279,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
 
   app.post("/api/v1/daemon/start", async (c) => {
     if (schedulerInstance?.isRunning) {
-      return c.json({ error: "Daemon already running" }, 400);
+      return c.json({ error: pick(await currentProjectLanguage(), "守护进程已在运行", "Daemon already running", "데몬이 이미 실행 중입니다") }, 400);
     }
     try {
       const currentConfig = await loadCurrentProjectConfig();
@@ -4266,9 +4316,9 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
     }
   });
 
-  app.post("/api/v1/daemon/stop", (c) => {
+  app.post("/api/v1/daemon/stop", async (c) => {
     if (!schedulerInstance?.isRunning) {
-      return c.json({ error: "Daemon not running" }, 400);
+      return c.json({ error: pick(await currentProjectLanguage(), "守护进程未在运行", "Daemon not running", "데몬이 실행 중이 아닙니다") }, 400);
     }
     schedulerInstance.stop();
     schedulerInstance = null;
@@ -4428,7 +4478,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
   app.get("/api/v1/sessions/:sessionId", async (c) => {
     const sessionId = c.req.param("sessionId");
     const session = await loadBookSession(root, sessionId);
-    if (!session) return c.json({ error: "Session not found" }, 404);
+    if (!session) return c.json({ error: pick(await currentProjectLanguage(), "未找到会话", "Session not found", "세션을 찾을 수 없습니다") }, 404);
     const task = await loadReconciledTaskSnapshot(sessionId);
     return c.json({ session, chatRequest: await loadChatRequest(sessionId), ...(task ? { task } : {}) });
   });
@@ -4472,7 +4522,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
         : surfaceBinding.workId;
     const boundWork = workId ? await loadWorkIfExists(root, workId) : null;
     if (typeof requestedWorkId === "string" && requestedWorkId.trim() && !boundWork) {
-      return c.json({ error: `Work not found: ${requestedWorkId.trim()}` }, 404);
+      return c.json({ error: pick(await currentProjectLanguage(), `未找到作品：${requestedWorkId.trim()}`, `Work not found: ${requestedWorkId.trim()}`, `작품을 찾을 수 없습니다: ${requestedWorkId.trim()}`) }, 404);
     }
     const requestedProfileId = (body as { profileId?: unknown }).profileId;
     const profileId = boundWork?.profileId
@@ -4498,7 +4548,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
       throw new ApiError(400, "INVALID_PLAY_MODE", "playMode is required");
     }
     const existing = await loadBookSession(root, c.req.param("sessionId"));
-    if (!existing) return c.json({ error: "Session not found" }, 404);
+    if (!existing) return c.json({ error: pick(await currentProjectLanguage(), "未找到会话", "Session not found", "세션을 찾을 수 없습니다") }, 404);
     const session = await createAndPersistBookSession(
       root,
       existing.bookId,
@@ -4514,12 +4564,12 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
     const body = await c.req.json<{ title?: string }>().catch(() => ({}) as { title?: string });
     const title = body.title?.trim();
     if (!title) {
-      throw new ApiError(400, "INVALID_SESSION_TITLE", "Session title is required");
+      throw new ApiError(400, "INVALID_SESSION_TITLE", pick(await currentProjectLanguage(), "会话标题不能为空", "Session title is required", "세션 제목을 입력하세요"));
     }
 
     const session = await renameBookSession(root, sessionId, title);
     if (!session) {
-      return c.json({ error: "Session not found" }, 404);
+      return c.json({ error: pick(await currentProjectLanguage(), "未找到会话", "Session not found", "세션을 찾을 수 없습니다") }, 404);
     }
     return c.json({ session });
   });
@@ -4567,7 +4617,12 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
     if (!sessionId || confirmed) return next();
     const previous = chatRequests.get(sessionId);
     if (previous?.snapshot.status === "running") return c.json({
-      error: { code: "CHAT_REQUEST_ALREADY_RUNNING", message: "当前会话仍在运行，请等待完成或先停止。" },
+      error: { code: "CHAT_REQUEST_ALREADY_RUNNING", message: pick(
+        await currentProjectLanguage(),
+        "当前会话仍在运行，请等待完成或先停止。",
+        "This session is still running. Wait for it to finish or stop it first.",
+        "현재 세션이 아직 실행 중입니다. 완료될 때까지 기다리거나 먼저 중지하세요.",
+      ) },
       chatRequest: previous.snapshot,
     }, 409);
     const request: NonNullable<ReturnType<typeof chatRequests.get>> = {
@@ -4587,9 +4642,9 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
         const interrupted = !previous && saved?.status === 'running';
         if (!saved || typeof body.retryOfRequestId !== 'string' || saved.requestId !== body.retryOfRequestId
           || (saved.status !== 'failed' && !interrupted) || saved.retry?.text !== body.instruction) {
-          throw new ApiError(409, 'CHAT_RETRY_CONFLICT', 'The failed submission no longer matches this retry. Reload the saved request.');
+          throw new ApiError(409, 'CHAT_RETRY_CONFLICT', pick(await currentProjectLanguage(), '失败的提交已与这次重试不一致。请重新加载已保存的请求。', 'The failed submission no longer matches this retry. Reload the saved request.', '실패한 요청이 이번 재시도와 더 이상 일치하지 않습니다. 저장된 요청을 다시 불러오세요.'));
         }
-        if (saved.baselineWork === undefined) throw new ApiError(409, 'CHAT_RETRY_BASELINE_UNAVAILABLE', 'The original revision inventory is unavailable for this older request. Send a new instruction against the current version.');
+        if (saved.baselineWork === undefined) throw new ApiError(409, 'CHAT_RETRY_BASELINE_UNAVAILABLE', pick(await currentProjectLanguage(), '这个较早请求的原始修订清单不可用。请基于当前版本发送新指令。', 'The original revision inventory is unavailable for this older request. Send a new instruction against the current version.', '이전 요청이라 원본 수정본 목록을 사용할 수 없습니다. 현재 버전을 기준으로 새 지시를 보내세요.'));
         request.snapshot = { ...request.snapshot, baselineWork: saved.baselineWork };
       } catch (error) {
         if (previous) chatRequests.set(sessionId, previous); else chatRequests.delete(sessionId);
@@ -4604,8 +4659,8 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
       const failure = response?.error;
       const error = failure ? {
         code: typeof failure === "object" ? failure.code ?? "CHAT_REQUEST_FAILED" : "CHAT_REQUEST_FAILED",
-        message: typeof failure === "string" ? failure : failure.message ?? "The request failed.",
-      } : c.res.status >= 400 ? { code: "CHAT_REQUEST_FAILED", message: `Request failed (HTTP ${c.res.status}).` } : undefined;
+        message: typeof failure === "string" ? failure : failure.message ?? pick(await currentProjectLanguage(), "请求失败。", "The request failed.", "요청에 실패했습니다."),
+      } : c.res.status >= 400 ? { code: "CHAT_REQUEST_FAILED", message: pick(await currentProjectLanguage(), `请求失败（HTTP ${c.res.status}）。`, `Request failed (HTTP ${c.res.status}).`, `요청에 실패했습니다(HTTP ${c.res.status}).`) } : undefined;
       const { toolExecutions: _completedTools, ...identity } = request.snapshot;
       request.snapshot = { ...identity,
         status: request.controller.signal.aborted ? "cancelled" : error ? "failed" : "completed",
@@ -4657,7 +4712,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
     }>();
     const sessionId = reqSessionId;
     if (!instruction?.trim()) {
-      return c.json({ error: "No instruction provided" }, 400);
+      return c.json({ error: pick(await currentProjectLanguage(), "未提供指令", "No instruction provided", "지시 내용이 없습니다") }, 400);
     }
     if (!sessionId?.trim()) {
       throw new ApiError(400, "SESSION_ID_REQUIRED", "sessionId is required");
@@ -4694,7 +4749,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
 
       const loadedBookSession = await loadBookSession(root, sessionId);
       if (!loadedBookSession) {
-        throw new ApiError(404, "SESSION_NOT_FOUND", `Session not found: ${sessionId}`);
+        throw new ApiError(404, "SESSION_NOT_FOUND", pick(language, `未找到会话：${sessionId}`, `Session not found: ${sessionId}`, `세션을 찾을 수 없습니다: ${sessionId}`));
       }
       let bookSession = loadedBookSession;
       const publishExecutionTarget = (session: typeof bookSession) => {
@@ -4709,7 +4764,12 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
         && persistedBookId
         && persistedBookId !== requestedActiveBookId
       ) {
-        return c.json({ error: { code: "SESSION_BOOK_MISMATCH", message: `Session ${bookSession.sessionId} is bound to ${persistedBookId}, not ${requestedActiveBookId}` },
+        return c.json({ error: { code: "SESSION_BOOK_MISMATCH", message: pick(
+          language,
+          `会话 ${bookSession.sessionId} 已绑定到 ${persistedBookId}，而不是 ${requestedActiveBookId}`,
+          `Session ${bookSession.sessionId} is bound to ${persistedBookId}, not ${requestedActiveBookId}`,
+          `세션 ${bookSession.sessionId}은(는) ${requestedActiveBookId}이(가) 아니라 ${persistedBookId}에 연결되어 있습니다`,
+        ) },
           session: workSessionResponseMetadata(bookSession) }, 409);
       }
       const agentBookId = requestedActiveBookId ?? persistedBookId;
@@ -4730,7 +4790,12 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
       const persistedWorkId = bookSession.workId ?? bookSession.bookId;
       if (persistedWorkId && ((requestedWorkId !== undefined && requestedWorkId !== persistedWorkId)
         || (requestedActiveBookId && requestedActiveBookId !== persistedWorkId))) {
-        return c.json({ error: { code: "SESSION_TARGET_CONFLICT", message: "This session has a different saved execution target." },
+        return c.json({ error: { code: "SESSION_TARGET_CONFLICT", message: pick(
+          language,
+          "此会话已保存了不同的执行目标。",
+          "This session has a different saved execution target.",
+          "이 세션에는 다른 실행 대상이 저장되어 있습니다.",
+        ) },
           session: workSessionResponseMetadata(bookSession) }, 409);
       }
       const candidateWorkId = reqWorkId === null
@@ -4740,13 +4805,18 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
         ? await loadWorkIfExists(root, candidateWorkId)
         : null;
       if (candidateWorkId && !boundWork && sessionKind !== "play") {
-        throw new ApiError(404, "WORK_NOT_FOUND", `Work not found: ${candidateWorkId}`);
+        throw new ApiError(404, "WORK_NOT_FOUND", pick(language, `未找到作品：${candidateWorkId}`, `Work not found: ${candidateWorkId}`, `작품을 찾을 수 없습니다: ${candidateWorkId}`));
       }
       const requestedProfileId = typeof reqProfileId === "string" && reqProfileId.trim()
         ? reqProfileId.trim()
         : undefined;
       if (boundWork && requestedProfileId && boundWork.profileId !== requestedProfileId) {
-        return c.json({ error: { code: "WORK_PROFILE_MISMATCH", message: `Work ${boundWork.id} uses ${boundWork.profileId}, not ${requestedProfileId}` },
+        return c.json({ error: { code: "WORK_PROFILE_MISMATCH", message: pick(
+          language,
+          `作品 ${boundWork.id} 使用的是 ${boundWork.profileId}，而不是 ${requestedProfileId}`,
+          `Work ${boundWork.id} uses ${boundWork.profileId}, not ${requestedProfileId}`,
+          `작품 ${boundWork.id}은(는) ${requestedProfileId}이(가) 아니라 ${boundWork.profileId}을(를) 사용합니다`,
+        ) },
           session: workSessionResponseMetadata(bookSession) }, 409);
       }
       const profileId = boundWork?.profileId ?? requestedProfileId ?? bookSession.profileId ?? surfaceBinding.profileId;
@@ -4798,7 +4868,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
           activeBookConfig = await state.loadBookConfig(agentBookId);
         } catch {
           if (boundWork) activeBookConfig = { language: boundWork.language };
-          else throw new ApiError(404, "BOOK_NOT_FOUND", `Book not found: ${agentBookId}`);
+          else throw new ApiError(404, "BOOK_NOT_FOUND", pick(language, `未找到书籍：${agentBookId}`, `Book not found: ${agentBookId}`, `책을 찾을 수 없습니다: ${agentBookId}`));
         }
       }
       const configLanguage = config.language === "en" ? "en" : "zh";
@@ -4843,11 +4913,12 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
         } catch (e: unknown) {
           if (e instanceof ServiceApiKeyNotFoundError) {
             return c.json({
-              error: pick(language, `请先为 ${reqService} 配置 API Key`, `Configure an API Key for ${reqService} first`),
+              error: pick(language, `请先为 ${reqService} 配置 API Key`, `Configure an API Key for ${reqService} first`, `먼저 ${reqService}의 API 키를 설정하세요`),
               response: pick(
                 language,
                 `请先在模型配置中为 ${reqService} 填写 API Key，然后再试。`,
                 `Fill in an API Key for ${reqService} in the model settings, then try again.`,
+                `모델 설정에서 ${reqService}의 API 키를 입력한 뒤 다시 시도하세요.`,
               ),
             }, 400);
           }
@@ -4954,6 +5025,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
             surfaceLanguage,
             "当前会话已有一个生产任务在运行，请等它完成，或先用停止按钮结束它，再发起新任务。",
             "A production task is already running in this session. Wait for it to finish, or stop it first, then start a new task.",
+            "이 세션에서 이미 제작 작업이 실행 중입니다. 작업이 끝날 때까지 기다리거나 중지 버튼으로 먼저 끝낸 뒤 새 작업을 시작하세요.",
           );
           return c.json({
             error: { code: "PRODUCTION_TASK_ALREADY_RUNNING", message },
@@ -5040,7 +5112,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
             createdBookId = resolveCreatedBookIdFromToolExecs([exec]);
             if (createdBookId) {
               if (!await completeBookExists(join(workDirectory(root, createdBookId), "source"))) {
-                const message = pick(surfaceLanguage, "创作工具返回了建书结果，但磁盘上的书籍工件不完整。", "The creation tool returned a book result, but the on-disk book artifact is incomplete.");
+                const message = pick(surfaceLanguage, "创作工具返回了建书结果，但磁盘上的书籍工件不完整。", "The creation tool returned a book result, but the on-disk book artifact is incomplete.", "생성 도구가 책 생성 결과를 반환했지만 디스크에 저장된 책 결과물이 완전하지 않습니다.");
                 bookCreateStatus.set(createdBookId, { status: "error", error: message });
                 broadcast("book:error", { bookId: createdBookId, sessionId: bookSession.sessionId, error: message });
                 throw new ApiError(500, "BOOK_CREATION_INCOMPLETE", message);
@@ -5065,7 +5137,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
           taskController.signal.throwIfAborted();
           exec.status = "running";
           exec.completedAt = undefined;
-          exec.logs = [...(exec.logs ?? []), pick(surfaceLanguage, "继续完成确认请求中的剩余动作…", "Continuing the remaining confirmed request...")].slice(-80);
+          exec.logs = [...(exec.logs ?? []), pick(surfaceLanguage, "继续完成确认请求中的剩余动作…", "Continuing the remaining confirmed request...", "확인된 요청의 남은 작업을 이어서 진행하는 중...")].slice(-80);
           await persistConfirmedTask(bookSession.sessionId, confirmedIntent, exec, sourceRequestId);
           const continuation = await runAgentSession({
             onWorkTransition: publishExecutionTarget,
@@ -5160,7 +5232,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
           if (continuation.errorMessage) {
             exec.logs = [
               ...(exec.logs ?? []),
-              pick(surfaceLanguage, `后续对话不可用：${continuation.errorMessage}`, `Follow-up response unavailable: ${continuation.errorMessage}`),
+              pick(surfaceLanguage, `后续对话不可用：${continuation.errorMessage}`, `Follow-up response unavailable: ${continuation.errorMessage}`, `후속 응답을 사용할 수 없습니다: ${continuation.errorMessage}`),
             ].slice(-80);
             exec.details = {
               ...(exec.details && typeof exec.details === "object" ? exec.details as Record<string, unknown> : {}),
@@ -5170,7 +5242,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
           await persistConfirmedTask(bookSession.sessionId, confirmedIntent, exec, sourceRequestId);
           const responseText = continuation.responseText
             || exec.result
-            || pick(surfaceLanguage, "已完成。", "Done.");
+            || pick(surfaceLanguage, "已完成。", "Done.", "완료되었습니다.");
           const responseForUser = continuation.responseText
             ? continuation.responseText
             : hasDomainOwnedResult(exec.details) ? "" : responseText;
@@ -5330,7 +5402,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
                 ) {
                   const bookId = resolveCreatedBookIdFromArgs(exec.args);
                   if (bookId) {
-                    const error = exec.error ?? "Book creation failed";
+                    const error = exec.error ?? pick(language, "建书失败", "Book creation failed", "책 생성에 실패했습니다");
                     bookCreateStatus.set(bookId, { status: "error", error });
                     broadcast("book:error", { bookId, sessionId: streamSessionId, error });
                   }
@@ -5375,7 +5447,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
         if (!createdBookId || bookSession.workId !== createdBookId) return null;
         if (broadcastedCreatedBookId === createdBookId) return createdBookId;
         if (!await completeBookExists(join(workDirectory(root, createdBookId), "source"))) {
-          const error = "Book creation artifact is incomplete on disk.";
+          const error = pick(language, "磁盘上的建书产物不完整。", "Book creation artifact is incomplete on disk.", "디스크에 저장된 책 생성 결과물이 완전하지 않습니다.");
           bookCreateStatus.set(createdBookId, { status: "error", error });
           broadcast("book:error", { bookId: createdBookId, sessionId: bookSession.sessionId, error });
           throw new Error(error);
@@ -5464,6 +5536,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
           language,
           "模型未返回文本内容。请检查协议类型（chat/responses）、流式开关或上游服务兼容性。",
           "The model returned no text content. Check the protocol type (chat/responses), the streaming switch, or upstream service compatibility.",
+          "모델이 텍스트를 반환하지 않았습니다. 프로토콜 유형(chat/responses), 스트리밍 설정, 업스트림 서비스 호환성을 확인하세요.",
         );
         if (resolveCreatedBookIdFromToolExecs(collectedToolExecs)) {
           await finalizeCreatedBook();
@@ -5539,6 +5612,13 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
     } catch (e) {
       return c.json({ error: String(e) }, 500);
     }
+  });
+
+  // UI locale is a per-browser display choice, independent of the project writing language.
+  app.put("/api/v1/ui-locale", async (c) => {
+    const { preference } = await c.req.json<{ preference?: unknown }>();
+    setStudioUiLocalePreference(normalizeStudioUiLocalePreference(preference));
+    return c.json({ ok: true, preference: studioUiLocalePreference });
   });
 
   // --- Audit ---
@@ -5622,7 +5702,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
       });
     } catch (error) {
       if (error instanceof ChapterExportSourceError) return c.json({error:error.message,code:error.code,details:error.details},409);
-      return c.json({ error: "Export failed" }, 500);
+      return c.json({ error: pick(await currentProjectLanguage(), "导出失败", "Export failed", "내보내기에 실패했습니다") }, 500);
     }
   });
 
@@ -5767,7 +5847,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
       return c.json({ error: "Invalid truth file" }, 400);
     }
     if (RUNTIME_DIAGNOSTIC_FILE_RE.test(file)) {
-      return c.json({ error: "Runtime diagnostic files are read-only" }, 400);
+      return c.json({ error: pick(await currentProjectLanguage(), "运行时诊断文件为只读", "Runtime diagnostic files are read-only", "런타임 진단 파일은 읽기 전용입니다") }, 400);
     }
     const { content } = await c.req.json<{ content: string }>();
     const { writeFile: writeFileFs, mkdir: mkdirFs } = await import("node:fs/promises");
@@ -5916,7 +5996,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
 
   app.post("/api/v1/style/analyze", async (c) => {
     const { text, sourceName, language } = await c.req.json<{ text: string; sourceName: string; language?: "zh" | "en" }>();
-    if (!text?.trim()) return c.json({ error: "text is required" }, 400);
+    if (!text?.trim()) return c.json({ error: pick(await currentProjectLanguage(), "请提供文本", "text is required", "텍스트를 입력하세요") }, 400);
 
     try {
       const { compileStyleGuide } = await import("@actalk/inkos-core");
@@ -5940,7 +6020,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
   app.post("/api/v1/books/:id/style/import", async (c) => {
     const id = c.req.param("id");
     const { text, sourceName } = await c.req.json<{ text: string; sourceName: string }>();
-    if (!text?.trim()) return c.json({ error: "text is required" }, 400);
+    if (!text?.trim()) return c.json({ error: pick(await currentProjectLanguage(), "请提供文本", "text is required", "텍스트를 입력하세요") }, 400);
 
     broadcast("style:start", { bookId: id });
     try {
@@ -5969,7 +6049,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
   app.post("/api/v1/books/:id/import/chapters", async (c) => {
     const id = c.req.param("id");
     const { text, splitRegex } = await c.req.json<{ text: string; splitRegex?: string }>();
-    if (!text?.trim()) return c.json({ error: "text is required" }, 400);
+    if (!text?.trim()) return c.json({ error: pick(await currentProjectLanguage(), "请提供文本", "text is required", "텍스트를 입력하세요") }, 400);
 
     broadcast("import:start", { bookId: id, type: "chapters" });
     try {
@@ -6076,7 +6156,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
       targetChapters?: number; chapterWordCount?: number; language?: string;
     }>();
     if (!body.title || !body.sourceText) {
-      return c.json({ error: "title and sourceText are required" }, 400);
+      return c.json({ error: pick(await currentProjectLanguage(), "书名和原作文本不能为空", "title and sourceText are required", "제목과 원작 텍스트를 입력하세요") }, 400);
     }
 
     const now = new Date().toISOString();
@@ -6149,13 +6229,13 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
       targetChapters?: number; chapterWordCount?: number; language?: string;
     }>();
     if (!body.title?.trim() || !body.parentBookId?.trim()) {
-      return c.json({ error: "title and parentBookId are required" }, 400);
+      return c.json({ error: pick(await currentProjectLanguage(), "书名和正传书籍不能为空", "title and parentBookId are required", "제목과 본편 책을 지정하세요") }, 400);
     }
     let parent;
     try {
       parent = await state.loadBookConfig(body.parentBookId);
     } catch {
-      return c.json({ error: `Parent book "${body.parentBookId}" not found` }, 404);
+      return c.json({ error: pick(await currentProjectLanguage(), `未找到正传书籍“${body.parentBookId}”`, `Parent book "${body.parentBookId}" not found`, `본편 책 "${body.parentBookId}"을(를) 찾을 수 없습니다`) }, 404);
     }
     const language = (body.language ?? parent.language) as "zh" | "en" | undefined;
     const now = new Date().toISOString();
@@ -6169,10 +6249,10 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
     }, now);
     const bookId = bookConfig.id;
     if (!bookId) {
-      return c.json({ error: "Could not derive a valid book id from title" }, 400);
+      return c.json({ error: pick(await currentProjectLanguage(), "无法根据书名生成有效的书籍 ID", "Could not derive a valid book id from title", "제목으로 올바른 책 ID를 만들 수 없습니다") }, 400);
     }
     if (await completeBookExists(state.bookDir(bookId))) {
-      return c.json({ error: `Book "${bookId}" already exists` }, 409);
+      return c.json({ error: pick(await currentProjectLanguage(), `书籍“${bookId}”已存在`, `Book "${bookId}" already exists`, `책 "${bookId}"이(가) 이미 있습니다`) }, 409);
     }
     broadcast("spinoff:start", { bookId, title: body.title, parentBookId: body.parentBookId });
     bookCreateStatus.set(bookId, { status: "creating" });
@@ -6220,7 +6300,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
       targetChapters?: number; chapterWordCount?: number; language?: string;
     }>();
     if (!body.title?.trim() || !body.referenceText?.trim() || !body.storyIdea?.trim()) {
-      return c.json({ error: "title, referenceText and storyIdea are required" }, 400);
+      return c.json({ error: pick(await currentProjectLanguage(), "书名、参考文本和故事方向不能为空", "title, referenceText and storyIdea are required", "제목, 참고 텍스트, 이야기 방향을 입력하세요") }, 400);
     }
     const now = new Date().toISOString();
     const bookConfig = buildStudioBookConfig({
@@ -6233,10 +6313,10 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
     }, now);
     const bookId = bookConfig.id;
     if (!bookId) {
-      return c.json({ error: "Could not derive a valid book id from title" }, 400);
+      return c.json({ error: pick(await currentProjectLanguage(), "无法根据书名生成有效的书籍 ID", "Could not derive a valid book id from title", "제목으로 올바른 책 ID를 만들 수 없습니다") }, 400);
     }
     if (await completeBookExists(state.bookDir(bookId))) {
-      return c.json({ error: `Book "${bookId}" already exists` }, 409);
+      return c.json({ error: pick(await currentProjectLanguage(), `书籍“${bookId}”已存在`, `Book "${bookId}" already exists`, `책 "${bookId}"이(가) 이미 있습니다`) }, 409);
     }
     broadcast("imitation:start", { bookId, title: body.title });
     bookCreateStatus.set(bookId, { status: "creating" });
@@ -6395,10 +6475,10 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
       segmentMaxChars?: number;
     } = await c.req.json().catch(() => ({}));
     if (!body.filePath?.trim()) {
-      return c.json({ error: { code: "MISSING_FILE_PATH", message: "filePath is required" } }, 400);
+      return c.json({ error: { code: "MISSING_FILE_PATH", message: pick(await currentProjectLanguage(), "请提供源文件", "filePath is required", "원본 파일을 지정하세요") } }, 400);
     }
     if (!body.sourceLanguage?.trim() || !body.targetLanguage?.trim()) {
-      return c.json({ error: { code: "MISSING_LANGUAGES", message: "sourceLanguage and targetLanguage are required" } }, 400);
+      return c.json({ error: { code: "MISSING_LANGUAGES", message: pick(await currentProjectLanguage(), "源语言和目标语言不能为空", "sourceLanguage and targetLanguage are required", "원본 언어와 대상 언어를 지정하세요") } }, 400);
     }
     const result = await executeExplicitCapabilityTool({
       projectRoot: root,
@@ -6457,7 +6537,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
       return c.json({ manifest, report, chapters });
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-        return c.json({ error: { code: "NOT_FOUND", message: `translation project not found for ${id}` } }, 404);
+        return c.json({ error: { code: "NOT_FOUND", message: pick(await currentProjectLanguage(), `未找到翻译项目：${id}`, `translation project not found for ${id}`, `번역 프로젝트를 찾을 수 없습니다: ${id}`) } }, 404);
       }
       throw error;
     }
@@ -6491,7 +6571,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
       throw new ApiError(
         500,
         "INKOS_TRANSLATION_ACTION_FAILED",
-        message || "Translation run failed.",
+        message || pick(await currentProjectLanguage(), "翻译运行失败。", "Translation run failed.", "번역 실행에 실패했습니다."),
       );
     }
   });
@@ -6533,7 +6613,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
       return c.json(JSON.parse(raw));
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-        return c.json({ error: { code: "NOT_FOUND", message: `story graph not found for ${id}` } }, 404);
+        return c.json({ error: { code: "NOT_FOUND", message: pick(await currentProjectLanguage(), `未找到剧情图谱：${id}`, `story graph not found for ${id}`, `스토리 그래프를 찾을 수 없습니다: ${id}`) } }, 404);
       }
       throw error;
     }
@@ -6556,7 +6636,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
       });
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-        return c.json({ error: { code: "NOT_FOUND", message: `interactive film project not found for ${id}` } }, 404);
+        return c.json({ error: { code: "NOT_FOUND", message: pick(await currentProjectLanguage(), `未找到互动影游项目：${id}`, `interactive film project not found for ${id}`, `인터랙티브 필름 프로젝트를 찾을 수 없습니다: ${id}`) } }, 404);
       }
       throw error;
     }
@@ -6569,7 +6649,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
     }
     const graph = await loadStoryGraph(root, id);
     if (!graph) {
-      return c.json({ error: { code: "NOT_FOUND", message: `story graph not found for ${id}` } }, 404);
+      return c.json({ error: { code: "NOT_FOUND", message: pick(await currentProjectLanguage(), `未找到剧情图谱：${id}`, `story graph not found for ${id}`, `스토리 그래프를 찾을 수 없습니다: ${id}`) } }, 404);
     }
     return c.json(reviewStoryGraph(graph));
   });
@@ -6578,7 +6658,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
     const id = c.req.param("id");
     if (!isSafeBookId(id)) return c.json({ error: { code: "INVALID_ID", message: `invalid project id: ${id}` } }, 400);
     const graph = await loadStoryGraph(root, id);
-    if (!graph) return c.json({ error: { code: "NOT_FOUND", message: `story graph not found for ${id}` } }, 404);
+    if (!graph) return c.json({ error: { code: "NOT_FOUND", message: pick(await currentProjectLanguage(), `未找到剧情图谱：${id}`, `story graph not found for ${id}`, `스토리 그래프를 찾을 수 없습니다: ${id}`) } }, 404);
     return c.json({ report: reviewStoryGraph(graph), distribution: analyzePathDistribution(graph) });
   });
 
@@ -6586,7 +6666,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
     const id = c.req.param("id");
     if (!isSafeBookId(id)) return c.json({ error: { code: "INVALID_ID", message: `invalid project id: ${id}` } }, 400);
     const graph = await loadStoryGraph(root, id);
-    if (!graph) return c.json({ error: { code: "NOT_FOUND", message: `story graph not found for ${id}` } }, 404);
+    if (!graph) return c.json({ error: { code: "NOT_FOUND", message: pick(await currentProjectLanguage(), `未找到剧情图谱：${id}`, `story graph not found for ${id}`, `스토리 그래프를 찾을 수 없습니다: ${id}`) } }, 404);
     return new Response(JSON.stringify(graph, null, 2), {
       headers: {
         "Content-Type": "application/json; charset=utf-8",
@@ -6599,7 +6679,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
     const id = c.req.param("id");
     if (!isSafeBookId(id)) return c.json({ error: { code: "INVALID_ID", message: `invalid project id: ${id}` } }, 400);
     const graph = await loadStoryGraph(root, id);
-    if (!graph) return c.json({ error: { code: "NOT_FOUND", message: `story graph not found for ${id}` } }, 404);
+    if (!graph) return c.json({ error: { code: "NOT_FOUND", message: pick(await currentProjectLanguage(), `未找到剧情图谱：${id}`, `story graph not found for ${id}`, `스토리 그래프를 찾을 수 없습니다: ${id}`) } }, 404);
     return new Response(exportInk(graph), {
       headers: {
         "Content-Type": "text/plain; charset=utf-8",
@@ -6612,7 +6692,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
     const id = c.req.param("id");
     if (!isSafeBookId(id)) return c.json({ error: { code: "INVALID_ID", message: `invalid project id: ${id}` } }, 400);
     const graph = await loadStoryGraph(root, id);
-    if (!graph) return c.json({ error: { code: "NOT_FOUND", message: `story graph not found for ${id}` } }, 404);
+    if (!graph) return c.json({ error: { code: "NOT_FOUND", message: pick(await currentProjectLanguage(), `未找到剧情图谱：${id}`, `story graph not found for ${id}`, `스토리 그래프를 찾을 수 없습니다: ${id}`) } }, 404);
     const assetDataUris: Record<string, string> = {};
     for (const node of graph.nodes) {
       const ref = node.imageSlot?.assetRef;
@@ -6648,7 +6728,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string, o
     const graph = await loadStoryGraph(root, id);
     const node = graph?.nodes.find((n) => n.id === nodeId);
     if (!node) {
-      return c.json({ error: { code: "NODE_NOT_FOUND", message: `node ${nodeId} not found` } }, 404);
+      return c.json({ error: { code: "NODE_NOT_FOUND", message: pick(await currentProjectLanguage(), `未找到节点 ${nodeId}`, `node ${nodeId} not found`, `노드 ${nodeId}을(를) 찾을 수 없습니다`) } }, 404);
     }
     const deps = overrides.nodeImageGenerator ?? (await defaultNodeImageDeps(root));
     const { assetRef, delta } = await generateNodeImage({ projectRoot: root, projectId: id, node, deps });

@@ -5,6 +5,7 @@ import { dirname, join, resolve } from "node:path";
 import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { ensureProjectDirectoryInitialized } from "../project-bootstrap.js";
+import { uiText } from "../ui-locale.js";
 
 export interface StudioLaunchSpec {
   readonly studioEntry: string;
@@ -174,15 +175,18 @@ export async function launchStudioWorkbench(root: string, port: string, initialH
   const launch = await resolveStudioLaunch(root);
 
   if (!launch) {
-    logError(
+    logError(uiText(
       "InkOS Studio not found. If you cloned the repo, run:\n" +
       "  cd packages/studio && pnpm install && pnpm build\n" +
       "Then run 'inkos studio' from the project root.",
-    );
+      "InkOS Studio를 찾을 수 없습니다. 저장소를 클론했다면 다음을 실행하세요:\n" +
+      "  cd packages/studio && pnpm install && pnpm build\n" +
+      "그런 다음 프로젝트 루트에서 'inkos studio'를 실행하세요.",
+    ));
     process.exit(1);
   }
 
-  log(`Starting InkOS Studio on ${url}`);
+  log(uiText(`Starting InkOS Studio on ${url}`, `InkOS Studio를 ${url}에서 시작합니다`));
 
   const child = spawn(launch.command, launch.args, {
     cwd: root,
@@ -191,7 +195,7 @@ export async function launchStudioWorkbench(root: string, port: string, initialH
   });
 
   child.on("error", (e) => {
-    logError(`Failed to start studio: ${e.message}`);
+    logError(uiText(`Failed to start studio: ${e.message}`, `Studio를 시작하지 못했습니다: ${e.message}`));
     process.exit(1);
   });
 
@@ -224,9 +228,15 @@ export async function launchStudioEntry(
     recentProjectPath: hooks.recentProjectPath,
   });
   if (prepared.initialized) {
-    log(`No inkos.json found in ${prepared.root}. Initialized a minimal InkOS project for Studio.`);
+    log(uiText(
+      `No inkos.json found in ${prepared.root}. Initialized a minimal InkOS project for Studio.`,
+      `${prepared.root}에 inkos.json이 없습니다. Studio용 최소 InkOS 프로젝트를 초기화했습니다.`,
+    ));
   } else if (prepared.source === "recent") {
-    log(`No InkOS project found in ${resolve(root)}. Reopening recent project: ${prepared.root}`);
+    log(uiText(
+      `No InkOS project found in ${resolve(root)}. Reopening recent project: ${prepared.root}`,
+      `${resolve(root)}에 InkOS 프로젝트가 없습니다. 최근 프로젝트를 다시 엽니다: ${prepared.root}`,
+    ));
   }
 
   if (hooks.launchStudio) {
@@ -239,9 +249,9 @@ export async function launchStudioEntry(
 
 export function createStudioCommand(hooks: StudioCommandHooks = {}): Command {
   return new Command("studio")
-  .description("Start InkOS Studio web workbench")
-  .option("-p, --port <port>", "Server port", "4567")
-  .option("--project <path>", "Open or initialize a specific InkOS project directory")
+  .description(uiText("Start InkOS Studio web workbench", "InkOS Studio 웹 작업 공간을 시작합니다"))
+  .option("-p, --port <port>", uiText("Server port", "서버 포트"), "4567")
+  .option("--project <path>", uiText("Open or initialize a specific InkOS project directory", "특정 InkOS 프로젝트 디렉터리를 열거나 초기화합니다"))
   .action(async (opts) => {
     const root = opts.project ? resolve(opts.project) : findProjectRoot();
     const port = opts.port;

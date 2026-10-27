@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Gamepad2, X, ChevronDown, ChevronLeft } from "lucide-react";
 import { fetchJson, buildApiUrl } from "../../hooks/use-api";
+import { tr } from "../../lib/app-language";
 import {
   HOLDING_TYPES, HOLDING_GLYPH, SLOT_GLYPH, EVIDENCE_LADDER,
   type HudDetail, type HudRow, type HoldingRow, type HoldingRelation, type HoldingLifecycle,
@@ -195,7 +196,7 @@ export function buildView(run: PlayRunResponse | null): HudView | null {
       .map((e) => {
         const other = e.fromId === id ? labelOf.get(e.toId) : labelOf.get(e.fromId);
         const strength = typeof e.strength === "number" ? ` ${e.strength}` : "";
-        return { label: "关系", text: `${e.type}${strength}${other ? ` · ${other}` : ""}` };
+        return { label: tr("关系", "Relation", "관계"), text: `${e.type}${strength}${other ? ` · ${other}` : ""}` };
       });
 
   const locations: HudRow[] = entities
@@ -284,7 +285,7 @@ export function buildView(run: PlayRunResponse | null): HudView | null {
       return {
         id: slot.id, glyph: SLOT_GLYPH[slot.kind] ?? "•", label: slot.label, kind: slot.kind,
         value: text, ratio, note: null,
-        details: cause ? [{ label: "因为", text: cause }] : [],
+        details: cause ? [{ label: tr("因为", "Cause", "원인"), text: cause }] : [],
       };
     });
   const latestTime = run.currentState?.timeAdvance
@@ -294,12 +295,12 @@ export function buildView(run: PlayRunResponse | null): HudView | null {
     ? {
         id: "world-time",
         glyph: "⏳",
-        label: "世界时间",
+        label: tr("世界时间", "World time", "세계 시간"),
         value: latestTime.anchor || latestTime.elapsed || "",
         note: latestTime.rationale || null,
         details: [
-          ...(latestTime.elapsed && latestTime.anchor ? [{ label: "经过", text: latestTime.elapsed }] : []),
-          ...(latestTime.synchronized ?? []).map((text) => ({ label: "同步", text })),
+          ...(latestTime.elapsed && latestTime.anchor ? [{ label: tr("经过", "Elapsed", "경과"), text: latestTime.elapsed }] : []),
+          ...(latestTime.synchronized ?? []).map((text) => ({ label: tr("同步", "Synced", "동기화"), text })),
         ],
       }
     : null;
@@ -320,13 +321,12 @@ export function buildView(run: PlayRunResponse | null): HudView | null {
 export function PlayHud(props: {
   readonly sessionId: string;
   readonly isStreaming: boolean;
-  readonly isZh: boolean;
   readonly open: boolean;
   readonly onClose: () => void;
   readonly sessionTitle?: string | null;
   readonly imageSettings?: PlayImageSettings;
 }) {
-  const { sessionId, isStreaming, isZh, open, onClose } = props;
+  const { sessionId, isStreaming, open, onClose } = props;
   const base = `/play/runs/${encodeURIComponent(sessionId)}/main`;
   const [selectedHoldingId, setSelectedHoldingId] = useState<string | null>(null);
   const [selectedFacingId, setSelectedFacingId] = useState<string | null>(null);
@@ -389,7 +389,7 @@ export function PlayHud(props: {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      if(result.status==="failed")throw new Error(result.error??"Image generation failed");
+      if(result.status==="failed")throw new Error(result.error??tr("配图生成失败", "Image generation failed", "이미지 생성에 실패했습니다"));
       await load();
     } catch (error) {
       setImageError(error instanceof Error ? error.message : String(error));
@@ -415,7 +415,7 @@ export function PlayHud(props: {
       .forEach((request) => void generate(request.key, request.body));
   }, [coverReady, effectiveImageSettings, view, run?.sceneImageUrl, generate]);
 
-  const title = props.sessionTitle?.trim() || run?.title?.trim() || (isZh ? "互动世界" : "Play World");
+  const title = props.sessionTitle?.trim() || run?.title?.trim() || tr("互动世界", "Play World", "인터랙티브 세계");
 
   // Collapsed: render nothing (the chat input row owns the prominent toggle).
   // Hooks above still run, so the run keeps polling and reporting the scene image.
@@ -429,7 +429,7 @@ export function PlayHud(props: {
         {view?.turn != null ? (
           <div className="flex shrink-0 flex-col items-center leading-none">
             <span className="text-[24px] leading-6 font-extrabold text-primary">{view.turn}</span>
-            <span className="text-[12px] font-semibold uppercase tracking-wider text-muted-foreground/60">{isZh ? "幕" : "Turn"}</span>
+            <span className="text-[12px] font-semibold uppercase tracking-wider text-muted-foreground/60">{tr("幕", "Turn", "턴")}</span>
           </div>
         ) : (
           <Gamepad2 size={16} className="shrink-0 text-primary" />
@@ -438,10 +438,10 @@ export function PlayHud(props: {
           <div className="truncate text-[16px] leading-6 font-bold text-foreground">{title}</div>
           <div className="mt-0.5 text-[14px] leading-5 text-muted-foreground">
             {view?.turn == null
-              ? (isZh ? "尚未开始" : "Not started")
+              ? tr("尚未开始", "Not started", "시작 전")
               : view?.mode
-                ? (view.mode === "guided" ? (isZh ? "互动模式" : "Guided") : (isZh ? "开放模式" : "Open"))
-                : (isZh ? "互动世界" : "Play World")}
+                ? (view.mode === "guided" ? tr("互动模式", "Guided", "선택형") : tr("开放模式", "Open", "자유형"))
+                : tr("互动世界", "Play World", "인터랙티브 세계")}
           </div>
         </div>
         {view?.time?.value ? (
@@ -449,59 +449,58 @@ export function PlayHud(props: {
             {view.time.value}
           </span>
         ) : null}
-        <button type="button" onClick={() => { onClose(); setSelectedHoldingId(null); setSelectedFacingId(null); }} className="shrink-0 text-muted-foreground hover:text-foreground" title={isZh ? "收起" : "Collapse"}>
+        <button type="button" onClick={() => { onClose(); setSelectedHoldingId(null); setSelectedFacingId(null); }} className="shrink-0 text-muted-foreground hover:text-foreground" title={tr("收起", "Collapse", "접기")}>
           <X size={15} />
         </button>
       </header>
 
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4 text-[15px]">
-        {run?.sceneImageUrl ? <img src={buildApiUrl(run.sceneImageUrl) ?? undefined} alt={isZh ? "当前场景插画" : "Current scene illustration"} className="w-full rounded-lg" /> : null}
+        {run?.sceneImageUrl ? <img src={buildApiUrl(run.sceneImageUrl) ?? undefined} alt={tr("当前场景插画", "Current scene illustration", "현재 장면 삽화")} className="w-full rounded-lg" /> : null}
         {!view ? (
           <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border/50 bg-secondary/10 px-4 py-8 text-center">
             <span className="text-3xl opacity-80">🎲</span>
-            <p className="text-[16px] leading-6 font-semibold text-foreground">{isZh ? "这个世界还在沉睡" : "This world is still asleep"}</p>
+            <p className="text-[16px] leading-6 font-semibold text-foreground">{tr("这个世界还在沉睡", "This world is still asleep", "이 세계는 아직 잠들어 있습니다")}</p>
             <p className="text-[14px] leading-6 text-muted-foreground">
-              {isZh
-                ? "在左边写下你的第一个动作，人物、线索、状态会在这里逐渐点亮。"
-                : "Take your first action on the left — characters, clues, and state will light up here."}
+              {tr(
+                "在左边写下你的第一个动作，人物、线索、状态会在这里逐渐点亮。",
+                "Take your first action on the left — characters, clues, and state will light up here.",
+                "왼쪽에 첫 행동을 입력하세요. 등장인물, 단서, 상태가 이곳에 하나씩 나타납니다.",
+              )}
             </p>
           </div>
         ) : selectedHolding ? (
           <HoldingInspect
             row={selectedHolding}
-            isZh={isZh}
             generating={generating.has(selectedHolding.id)}
             onBack={() => setSelectedHoldingId(null)}
           />
         ) : selectedFacing ? (
           <HudRowInspect
             row={selectedFacing}
-            isZh={isZh}
             onBack={() => setSelectedFacingId(null)}
           />
         ) : (
           <>
             {view.time && (view.time.note || view.time.details.length > 0) ? (
               <Zone
-                title={isZh ? "世界时间" : "World time"}
+                title={tr("世界时间", "World time", "세계 시간")}
                 icon="⏳"
                 empty={false}
                 emptyText=""
               >
-                <Row row={view.time} isZh={isZh} />
+                <Row row={view.time} />
               </Zone>
             ) : null}
             <Zone
-              title={isZh ? "我面对的" : "Around me"}
+              title={tr("我面对的", "Around me", "내 주변")}
               icon="🧭"
               empty={view.facing.length === 0}
-              emptyText={isZh ? "周围还没有出现地点或人物" : "No places or people around yet"}
+              emptyText={tr("周围还没有出现地点或人物", "No places or people around yet", "주변에 아직 장소나 인물이 없습니다")}
             >
               {view.facing.map((row) => (
                 <Row
                   key={row.id}
                   row={row}
-                  isZh={isZh}
                   generating={generating.has(row.id)}
                   onOpenVisual={row.imageUrl ? () => { setSelectedHoldingId(null); setSelectedFacingId(row.id); } : undefined}
                 />
@@ -509,16 +508,15 @@ export function PlayHud(props: {
             </Zone>
 
             <Zone
-              title={isZh ? "我握有的" : "What I hold"}
+              title={tr("我握有的", "What I hold", "내 소지품")}
               icon="🎒"
               empty={view.holdings.length === 0}
-              emptyText={isZh ? "还没有获得物品、证据或线索" : "No items, evidence, or clues yet"}
+              emptyText={tr("还没有获得物品、证据或线索", "No items, evidence, or clues yet", "아직 얻은 물건, 증거, 단서가 없습니다")}
             >
               {view.holdings.map((row) => (
                 <HoldingSlot
                   key={row.id}
                   row={row}
-                  isZh={isZh}
                   generating={generating.has(row.id)}
                   onOpen={() => { setSelectedFacingId(null); setSelectedHoldingId(row.id); }}
                 />
@@ -526,10 +524,10 @@ export function PlayHud(props: {
             </Zone>
 
             <Zone
-              title={isZh ? "状态" : "State"}
+              title={tr("状态", "State", "상태")}
               icon="📊"
               empty={view.meters.length === 0}
-              emptyText={isZh ? "还没有出现数值（压力、资源、关系、倒计时等）" : "No meters yet (pressure, resources, relations, timers…)"}
+              emptyText={tr("还没有出现数值（压力、资源、关系、倒计时等）", "No meters yet (pressure, resources, relations, timers…)", "아직 수치가 없습니다(압박, 자원, 관계, 카운트다운 등)")}
             >
               {view.meters.map((row) => (
                 <StateGauge key={row.id} row={row} />
@@ -577,14 +575,13 @@ function Zone(props: {
 
 function HudRowInspect(props: {
   readonly row: HudRow;
-  readonly isZh: boolean;
   readonly onBack: () => void;
 }) {
-  const { row, isZh, onBack } = props;
+  const { row, onBack } = props;
   return (
     <div className="min-w-0 space-y-3">
       <button type="button" onClick={onBack} className="flex items-center gap-1 text-[14px] leading-6 text-muted-foreground hover:text-foreground">
-        <ChevronLeft size={14} /> {isZh ? "返回" : "Back"}
+        <ChevronLeft size={14} /> {tr("返回", "Back", "뒤로")}
       </button>
 
       <div className="min-w-0 overflow-hidden rounded-xl border border-border/40 bg-secondary/30">
@@ -623,12 +620,10 @@ function HudRowInspect(props: {
 
 function Row({
   row,
-  isZh,
   generating,
   onOpenVisual,
 }: {
   readonly row: HudRow;
-  readonly isZh: boolean;
   readonly generating?: boolean;
   readonly onOpenVisual?: () => void;
 }) {
@@ -641,7 +636,7 @@ function Row({
     <div className="min-w-0 rounded-lg border border-border/30 bg-secondary/30">
       <div
         role={interactive ? "button" : undefined}
-        aria-label={interactive ? `${row.label} ${opensVisual ? (isZh ? "查看大图" : "view image") : open ? (isZh ? "收起详情" : "collapse details") : (isZh ? "展开详情" : "show details")}` : undefined}
+        aria-label={interactive ? `${row.label} ${opensVisual ? tr("查看大图", "view image", "큰 이미지 보기") : open ? tr("收起详情", "collapse details", "상세 접기") : tr("展开详情", "show details", "상세 펼치기")}` : undefined}
         onClick={opensVisual ? onOpenVisual : expandable ? () => setOpen((o) => !o) : undefined}
         className={`px-2.5 py-2 ${interactive ? "cursor-pointer" : ""}`}
       >

@@ -1,4 +1,5 @@
 import type { SSEMessage } from "./use-sse";
+import { tr } from "../lib/app-language";
 
 const START_EVENTS = new Set(["write:start", "draft:start"]);
 const TERMINAL_EVENTS = new Set(["write:complete", "write:error", "draft:complete", "draft:error"]);
@@ -120,7 +121,7 @@ export function deriveBookActivity(messages: ReadonlyArray<SSEMessage>, bookId: 
         break;
       case "write:error":
         writing = false;
-        lastError = typeof data?.error === "string" ? data.error : "Unknown error";
+        lastError = typeof data?.error === "string" ? data.error : tr("未知错误", "Unknown error", "알 수 없는 오류");
         break;
       case "draft:start":
         drafting = true;
@@ -132,7 +133,7 @@ export function deriveBookActivity(messages: ReadonlyArray<SSEMessage>, bookId: 
         break;
       case "draft:error":
         drafting = false;
-        lastError = typeof data?.error === "string" ? data.error : "Unknown error";
+        lastError = typeof data?.error === "string" ? data.error : tr("未知错误", "Unknown error", "알 수 없는 오류");
         break;
       default:
         break;

@@ -2,6 +2,8 @@ import { readFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { createLLMClient, StateManager, createLogger, createStderrSink, createJsonLineSink, resolveEffectiveLLMConfig, loadLLMEnvLayers, GLOBAL_CONFIG_DIR, GLOBAL_ENV_PATH, createBuiltInWorkProfileRegistry, loadAvailableAgentSkills, mergeActivatedSkillGuidance, resolveProfileSkillActivations, type ActivatedSkillGuidance, type EffectiveLLMConfigResult, type LLMApiFormat, type LLMConfigCliOverrides, type ProjectConfig, type PipelineConfig, type LogSink } from "@actalk/inkos-core";
 
+import { uiText } from "./ui-locale.js";
+
 export { GLOBAL_CONFIG_DIR, GLOBAL_ENV_PATH };
 
 
@@ -43,7 +45,12 @@ export async function resolveCliProfileSkills(
   const byId = new Map(available.skills.map((skill) => [skill.id, skill]));
   const extras = (options.extraSkillIds ?? []).map((id) => {
     const skill = byId.get(id);
-    if (!skill) throw new Error(`CLI operation requires unavailable skill: ${id}`);
+    if (!skill) {
+      throw new Error(uiText(
+        `CLI operation requires unavailable skill: ${id}`,
+        `CLI 작업에 필요한 스킬을 사용할 수 없습니다: ${id}`,
+      ));
+    }
     return { skill, resources: [] };
   });
   return mergeActivatedSkillGuidance(profileSkills, extras);
@@ -187,23 +194,26 @@ export async function resolveBookId(
 
   if (bookIdArg) {
     if (!books.includes(bookIdArg)) {
-      const available = books.length > 0 ? books.join(", ") : "(none)";
-      throw new Error(
+      const available = books.length > 0 ? books.join(", ") : uiText("(none)", "(없음)");
+      throw new Error(uiText(
         `Book "${bookIdArg}" not found. Available books: ${available}`,
-      );
+        `책 "${bookIdArg}"을(를) 찾을 수 없습니다. 사용 가능한 책: ${available}`,
+      ));
     }
     return bookIdArg;
   }
 
   if (books.length === 0) {
-    throw new Error(
+    throw new Error(uiText(
       "No books found. Create one first:\n  inkos book create --title '...' --genre xuanhuan",
-    );
+      "책이 없습니다. 먼저 책을 만드세요:\n  inkos book create --title '...' --genre xuanhuan",
+    ));
   }
   if (books.length === 1) {
     return books[0]!;
   }
-  throw new Error(
+  throw new Error(uiText(
     `Multiple books found: ${books.join(", ")}\nPlease specify a book-id.`,
-  );
+    `책이 여러 권 있습니다: ${books.join(", ")}\nbook-id를 지정하세요.`,
+  ));
 }

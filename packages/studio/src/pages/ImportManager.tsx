@@ -21,7 +21,7 @@ function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result ?? ""));
-    reader.onerror = () => reject(reader.error ?? new Error("Failed to read file"));
+    reader.onerror = () => reject(reader.error ?? new Error(tr("读取文件失败", "Failed to read file", "파일을 읽지 못했습니다")));
     reader.readAsDataURL(file);
   });
 }
@@ -81,7 +81,7 @@ export function ImportManager({ nav, theme, t, initialTab }: { nav: Nav; theme: 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: chText, splitRegex: chSplitRegex || undefined }),
       });
-      setStatus({ tone: "success", message: `Imported ${data.importedCount} chapters` });
+      setStatus({ tone: "success", message: tr(`已导入 ${data.importedCount} 章`, `Imported ${data.importedCount} chapters`, `챕터 ${data.importedCount}개를 가져왔습니다`) });
     } catch (e) {
       setStatus({ tone: "error", message: e instanceof Error ? e.message : String(e) });
     }
@@ -106,7 +106,7 @@ export function ImportManager({ nav, theme, t, initialTab }: { nav: Nav; theme: 
           filename: canonFile.name,
         });
       }
-      setStatus({ tone: "success", message: tr("母本导入成功", "Canon imported successfully") });
+      setStatus({ tone: "success", message: tr("母本导入成功", "Canon imported successfully", "원작을 가져왔습니다") });
     } catch (e) {
       setStatus({ tone: "error", message: e instanceof Error ? e.message : String(e) });
     }
@@ -241,7 +241,7 @@ export function ImportManager({ nav, theme, t, initialTab }: { nav: Nav; theme: 
         {tab === "canon" && (
           <>
             <p className="text-sm text-muted-foreground">
-              {tr("母本可以来自已有 InkOS 书籍，也可以直接上传外部 TXT、Markdown 或 PDF 小说。", "Use an existing InkOS book or upload an external TXT, Markdown, or PDF novel as canon.")}
+              {tr("母本可以来自已有 InkOS 书籍，也可以直接上传外部 TXT、Markdown 或 PDF 小说。", "Use an existing InkOS book or upload an external TXT, Markdown, or PDF novel as canon.", "원작으로 기존 InkOS 책을 고르거나, 외부 TXT·Markdown·PDF 소설을 직접 업로드할 수 있습니다.")}
             </p>
             <div className="inline-flex rounded-lg border border-border bg-secondary/20 p-1">
               {(["book", "file"] as const).map((sourceType) => (
@@ -251,7 +251,7 @@ export function ImportManager({ nav, theme, t, initialTab }: { nav: Nav; theme: 
                   onClick={() => setCanonSourceType(sourceType)}
                   className={`rounded-md px-3 py-1.5 text-sm ${canonSourceType === sourceType ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"}`}
                 >
-                  {sourceType === "book" ? tr("已有书籍", "Existing book") : tr("上传外部母本", "Upload external canon")}
+                  {sourceType === "book" ? tr("已有书籍", "Existing book", "기존 책") : tr("上传外部母本", "Upload external canon", "외부 원작 업로드")}
                 </button>
               ))}
             </div>
@@ -265,7 +265,7 @@ export function ImportManager({ nav, theme, t, initialTab }: { nav: Nav; theme: 
               <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-dashed border-border bg-secondary/20 px-4 py-4 text-sm hover:bg-secondary/30">
                 <Upload size={18} className="text-primary" />
                 <span className="min-w-0 flex-1 truncate">
-                  {canonFile?.name ?? tr("选择 TXT、Markdown 或 PDF 文件", "Choose a TXT, Markdown, or PDF file")}
+                  {canonFile?.name ?? tr("选择 TXT、Markdown 或 PDF 文件", "Choose a TXT, Markdown, or PDF file", "TXT, Markdown 또는 PDF 파일을 선택하세요")}
                 </span>
                 <input
                   type="file"
@@ -296,22 +296,22 @@ export function ImportManager({ nav, theme, t, initialTab }: { nav: Nav; theme: 
             <div className="grid grid-cols-3 gap-3">
               <select value={ffMode} onChange={(e) => setFfMode(e.target.value)}
                 className="px-3 py-2 rounded-lg bg-secondary/30 border border-border text-sm">
-                <option value="canon">{tr("原著向", "Canon-compliant")}</option>
-                <option value="au">{tr("架空 AU", "Alternate Universe (AU)")}</option>
-                <option value="ooc">{tr("性格偏离 OOC", "Out of Character (OOC)")}</option>
-                <option value="cp">{tr("配对 CP", "Pairing (CP)")}</option>
+                <option value="canon">{tr("原著向", "Canon-compliant", "원작 충실")}</option>
+                <option value="au">{tr("架空 AU", "Alternate Universe (AU)", "대체 세계관(AU)")}</option>
+                <option value="ooc">{tr("性格偏离 OOC", "Out of Character (OOC)", "캐릭터 성격 변형(OOC)")}</option>
+                <option value="cp">{tr("配对 CP", "Pairing (CP)", "커플링(CP)")}</option>
               </select>
               <select value={ffGenre} onChange={(e) => setFfGenre(e.target.value)}
                 className="px-3 py-2 rounded-lg bg-secondary/30 border border-border text-sm">
-                <option value="other">{tr("其他", "Other")}</option>
-                <option value="xuanhuan">{tr("玄幻", "Xuanhuan Fantasy")}</option>
-                <option value="urban">{tr("都市", "Urban")}</option>
-                <option value="xianxia">{tr("仙侠", "Xianxia")}</option>
+                <option value="other">{tr("其他", "Other", "기타")}</option>
+                <option value="xuanhuan">{tr("玄幻", "Xuanhuan Fantasy", "현환 판타지")}</option>
+                <option value="urban">{tr("都市", "Urban", "현대물")}</option>
+                <option value="xianxia">{tr("仙侠", "Xianxia", "선협")}</option>
               </select>
               <select value={ffLang} onChange={(e) => setFfLang(e.target.value as "zh" | "en")}
                 className="px-3 py-2 rounded-lg bg-secondary/30 border border-border text-sm">
-                <option value="zh">{tr("中文", "Chinese")}</option>
-                <option value="en">English</option>
+                <option value="zh">{tr("中文", "Chinese", "중국어로 집필")}</option>
+                <option value="en">{tr("English", "English", "영어로 집필")}</option>
               </select>
             </div>
             <textarea value={ffText} onChange={(e) => setFfText(e.target.value)} rows={10}
@@ -358,15 +358,15 @@ export function ImportManager({ nav, theme, t, initialTab }: { nav: Nav; theme: 
             <div className="grid grid-cols-2 gap-3">
               <select value={imGenre} onChange={(e) => setImGenre(e.target.value)}
                 className="px-3 py-2 rounded-lg bg-secondary/30 border border-border text-sm">
-                <option value="other">{tr("其他", "Other")}</option>
-                <option value="xuanhuan">{tr("玄幻", "Xuanhuan Fantasy")}</option>
-                <option value="urban">{tr("都市", "Urban")}</option>
-                <option value="xianxia">{tr("仙侠", "Xianxia")}</option>
+                <option value="other">{tr("其他", "Other", "기타")}</option>
+                <option value="xuanhuan">{tr("玄幻", "Xuanhuan Fantasy", "현환 판타지")}</option>
+                <option value="urban">{tr("都市", "Urban", "현대물")}</option>
+                <option value="xianxia">{tr("仙侠", "Xianxia", "선협")}</option>
               </select>
               <select value={imLang} onChange={(e) => setImLang(e.target.value as "zh" | "en")}
                 className="px-3 py-2 rounded-lg bg-secondary/30 border border-border text-sm">
-                <option value="zh">{tr("中文", "Chinese")}</option>
-                <option value="en">English</option>
+                <option value="zh">{tr("中文", "Chinese", "중국어로 집필")}</option>
+                <option value="en">{tr("English", "English", "영어로 집필")}</option>
               </select>
             </div>
             <textarea value={imIdea} onChange={(e) => setImIdea(e.target.value)} rows={4}

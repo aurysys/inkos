@@ -13,7 +13,7 @@ import type {
   ToolExecution,
 } from "../../types";
 import { fetchJson } from "../../../../hooks/use-api";
-import { tr } from "../../../../lib/app-language";
+import { tr, trContent } from "../../../../lib/app-language";
 import { isConfirmedProductionSend } from "../../message-policy";
 import { attachSessionStreamListeners } from "./stream-events";
 import {
@@ -71,7 +71,7 @@ function formatAttachmentSize(size: number): string {
 
 function formatUserMessageForDisplay(text: string, attachments: ReadonlyArray<ChatAttachmentPayload>): string {
   if (attachments.length === 0) return text;
-  const heading = tr("附件：", "Attachments:");
+  const heading = tr("附件：", "Attachments:", "첨부 파일:");
   const lines = text ? [text, "", heading] : [heading];
   for (const attachment of attachments) {
     lines.push(`- ${attachment.filename} (${attachment.mediaType || "application/octet-stream"}, ${formatAttachmentSize(attachment.size)})`);
@@ -405,7 +405,7 @@ export const createMessageSlice: StateCreator<ChatStore, [], [], MessageActions>
     }
     const session = get().sessions[sessionId];
     const stoppedAt = Date.now();
-    const stoppedMessage = tr("已由用户停止", "Stopped by user");
+    const stoppedMessage = tr("已由用户停止", "Stopped by user", "사용자가 중지했습니다.");
     const messages = markRunningToolsFailed(
       session?.messages ?? [],
       stoppedMessage,
@@ -451,11 +451,11 @@ export const createMessageSlice: StateCreator<ChatStore, [], [], MessageActions>
         restoredMessages = mergeToolExecution(restoredMessages, execution);
       }
       if (!isRunning && data.chatRequest !== undefined) restoredMessages = markRunningToolsFailed(
-        restoredMessages, tr("运行已中断，请从已保存结果继续。", "Execution stopped. Continue from the saved results."), Date.now(),
+        restoredMessages, tr("运行已中断，请从已保存结果继续。", "Execution stopped. Continue from the saved results.", "실행이 중단되었습니다. 저장된 결과에서 이어서 진행하세요."), Date.now(),
       );
       const failedRequest = data.chatRequest?.status === "failed" ? data.chatRequest : undefined;
       const failureMessage = failedRequest ? failedRequest.error?.message
-        ?? tr("上次请求未完成，请重试或从已保存结果继续。", "The previous request failed. Retry or continue from the saved results.") : undefined;
+        ?? tr("上次请求未完成，请重试或从已保存结果继续。", "The previous request failed. Retry or continue from the saved results.", "이전 요청이 완료되지 않았습니다. 다시 시도하거나 저장된 결과에서 이어서 진행하세요.") : undefined;
       const failureTimestamp = failedRequest?.completedAt ?? failedRequest?.startedAt;
       if (failureMessage && failureTimestamp !== undefined) restoredMessages = [...restoredMessages, {
         role: "assistant", kind: "error", content: failureMessage, timestamp: failureTimestamp,
@@ -554,10 +554,10 @@ export const createMessageSlice: StateCreator<ChatStore, [], [], MessageActions>
     const boundWorkId = session.workId ?? session.bookId;
     const requestedWorkIds = [options?.activeBookId, options?.workId].filter(Boolean);
     if (boundWorkId && requestedWorkIds.some(id => id !== boundWorkId)) {
-      get().addErrorMessage(sessionId, tr("作品切换尚未完成，请等待当前作品会话加载后重试。", "The work session is still switching. Wait for the selected work to load and retry."));
+      get().addErrorMessage(sessionId, tr("作品切换尚未完成，请等待当前作品会话加载后重试。", "The work session is still switching. Wait for the selected work to load and retry.", "작품 전환이 아직 끝나지 않았습니다. 선택한 작품의 세션을 불러온 뒤 다시 시도하세요."));
       return;
     }
-    const userInstruction = trimmed || tr("请阅读我上传的文件。", "Please read the files I uploaded.");
+    const userInstruction = trimmed || trContent("请阅读我上传的文件。", "Please read the files I uploaded.");
     const activeBookId = options?.activeBookId ?? session.bookId ?? undefined;
     const sessionKind: ChatSessionKind = options?.sessionKind
       ?? session.sessionKind
@@ -584,7 +584,7 @@ export const createMessageSlice: StateCreator<ChatStore, [], [], MessageActions>
 
     if (!get().selectedModel) {
       get().addUserMessage(sessionId, formatUserMessageForDisplay(userInstruction, attachments));
-      get().addErrorMessage(sessionId, tr("请先选择一个模型", "Select a model first"));
+      get().addErrorMessage(sessionId, tr("请先选择一个模型", "Select a model first", "먼저 모델을 선택하세요."));
       rememberFailedSend();
       return;
     }
@@ -744,6 +744,7 @@ export const createMessageSlice: StateCreator<ChatStore, [], [], MessageActions>
           const emptyMessage = tr(
             "模型未返回文本内容。请检查协议类型（chat/responses）、流式开关或上游服务兼容性。",
             "The model returned no text. Check the protocol type (chat/responses), the streaming toggle, or upstream service compatibility.",
+            "모델이 텍스트를 반환하지 않았습니다. 프로토콜 유형(chat/responses), 스트리밍 설정 또는 상위 서비스 호환성을 확인하세요.",
           );
           get().addErrorMessage(sessionId, emptyMessage);
           // 空响应同样算这轮失败；用户主动停止的轮 isChatStreaming 已是 false，不记录。

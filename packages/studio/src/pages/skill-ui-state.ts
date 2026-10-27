@@ -13,6 +13,8 @@ export interface SkillImportFilePayload {
   readonly dataUrl: string;
 }
 
+import { getUiLocale } from "../lib/app-language";
+
 const MAX_SKILL_IMPORT_FILES = 128;
 const MAX_SKILL_IMPORT_FILE_BYTES = 2 * 1024 * 1024;
 const MAX_SKILL_IMPORT_TOTAL_BYTES = 8 * 1024 * 1024;
@@ -38,16 +40,25 @@ export function selectedSkillIdsForSend(selected: ReadonlyArray<string>): string
 export async function serializeSkillFolder(files: FileList | ReadonlyArray<File>): Promise<SkillImportFilePayload[]> {
   const selectedFiles = Array.from(files);
   if (selectedFiles.length > MAX_SKILL_IMPORT_FILES) {
-    throw new Error(`A skill may contain at most ${MAX_SKILL_IMPORT_FILES} files.`);
+    throw new Error(skillImportMessage(
+      `A skill may contain at most ${MAX_SKILL_IMPORT_FILES} files.`,
+      `스킬에는 파일을 최대 ${MAX_SKILL_IMPORT_FILES}개까지 넣을 수 있습니다.`,
+    ));
   }
   let totalBytes = 0;
   for (const file of selectedFiles) {
     if (file.size > MAX_SKILL_IMPORT_FILE_BYTES) {
-      throw new Error(`${file.name} exceeds ${MAX_SKILL_IMPORT_FILE_BYTES} bytes.`);
+      throw new Error(skillImportMessage(
+        `${file.name} exceeds ${MAX_SKILL_IMPORT_FILE_BYTES} bytes.`,
+        `${file.name} 파일이 ${MAX_SKILL_IMPORT_FILE_BYTES}바이트를 넘습니다.`,
+      ));
     }
     totalBytes += file.size;
     if (totalBytes > MAX_SKILL_IMPORT_TOTAL_BYTES) {
-      throw new Error(`Skill folder exceeds ${MAX_SKILL_IMPORT_TOTAL_BYTES} bytes.`);
+      throw new Error(skillImportMessage(
+        `Skill folder exceeds ${MAX_SKILL_IMPORT_TOTAL_BYTES} bytes.`,
+        `스킬 폴더가 ${MAX_SKILL_IMPORT_TOTAL_BYTES}바이트를 넘습니다.`,
+      ));
     }
   }
   const out: SkillImportFilePayload[] = [];
@@ -60,6 +71,11 @@ export async function serializeSkillFolder(files: FileList | ReadonlyArray<File>
     });
   }
   return out;
+}
+
+// 原有错误文案只有英文；韩语界面给韩语，其余保持英文不变。
+function skillImportMessage(en: string, ko: string): string {
+  return getUiLocale() === "ko" ? ko : en;
 }
 
 function bytesToBase64(bytes: Uint8Array): string {

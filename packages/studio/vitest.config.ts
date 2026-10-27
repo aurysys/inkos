@@ -22,5 +22,7 @@ export default defineConfig({
     // server.ts is large enough that first-load esbuild transforms can exceed
     // Vitest's default 5s timeout on a cold full-suite run.
     testTimeout: 30_000,
+    // Existing assertions cover the zh/en copy; the Korean UI locale is opt-out here.
+    env: { INKOS_UI_LOCALE: "follow" },
   },
 });

@@ -20,6 +20,12 @@ import {
 import { join } from "node:path";
 import { persistProjectSession } from "./session-store.js";
 import { buildPipelineConfig, loadConfig } from "../utils.js";
+import { isKoreanUi } from "../ui-locale.js";
+
+function uiCopy(language: "zh" | "en", zh: string, en: string, ko: string): string {
+  if (isKoreanUi()) return ko;
+  return language === "en" ? en : zh;
+}
 
 interface TuiAgentRoute {
   readonly userMessage: string;
@@ -58,9 +64,12 @@ export async function processTuiAgentInput(params: {
   const useWork = params.input.trim().match(/^\/use\s+([^\s]+)$/i)?.[1];
   const selectedWork = useWork ? await loadWorkManifest(params.projectRoot, useWork) : null;
   const localWorkResponse = selectedWork
-    ? (language === "en"
-        ? `Using Work "${selectedWork.title}" (${selectedWork.id}) with profile ${selectedWork.profileId}.`
-        : `已切换到 Work「${selectedWork.title}」（${selectedWork.id}），Profile：${selectedWork.profileId}。`)
+    ? uiCopy(
+        language,
+        `已切换到 Work「${selectedWork.title}」（${selectedWork.id}），Profile：${selectedWork.profileId}。`,
+        `Using Work "${selectedWork.title}" (${selectedWork.id}) with profile ${selectedWork.profileId}.`,
+        `작품을 전환했습니다: "${selectedWork.title}"(${selectedWork.id}), 프로필: ${selectedWork.profileId}`,
+      )
     : await resolveLocalWorkCommand(params.projectRoot, params.input, language);
   const currentKind = params.session.sessionKind ?? (currentBookId ? "book" : "chat");
   const route = localWorkResponse
@@ -209,10 +218,15 @@ async function resolveLocalWorkCommand(
   const input = rawInput.trim();
   if (/^\/works$/i.test(input)) {
     const works = await listWorkManifests(projectRoot);
-    if (works.length === 0) return language === "en" ? "No creative Works found." : "还没有创作 Work。";
+    if (works.length === 0) return uiCopy(language, "还没有创作 Work。", "No creative Works found.", "아직 창작 작품이 없습니다.");
     return [
-      language === "en" ? "Creative Works:" : "创作 Works：",
-      ...works.map((work) => `- ${work.id} | ${work.profileId} | ${work.title} | ${work.artifacts.length} artifacts`),
+      uiCopy(language, "创作 Works：", "Creative Works:", "창작 작품:"),
+      ...works.map((work) => `- ${work.id} | ${work.profileId} | ${work.title} | ${uiCopy(
+        language,
+        `${work.artifacts.length} artifacts`,
+        `${work.artifacts.length} artifacts`,
+        `생성물 ${work.artifacts.length}개`,
+      )}`),
     ].join("\n");
   }
   const match = input.match(/^\/work\s+([^\s]+)$/i);
@@ -223,9 +237,9 @@ async function resolveLocalWorkCommand(
     const recent = episodes.listEpisodes({ workId: work.id, limit: 10 });
     return [
       `${work.title} (${work.id})`,
-      `${language === "en" ? "Profile" : "类型"}: ${work.profileId}`,
-      `${language === "en" ? "Artifacts" : "生成物"}: ${work.artifacts.length}`,
-      `${language === "en" ? "Recent episodes" : "最近执行"}: ${recent.length}`,
+      `${uiCopy(language, "类型", "Profile", "프로필")}: ${work.profileId}`,
+      `${uiCopy(language, "生成物", "Artifacts", "생성물")}: ${work.artifacts.length}`,
+      `${uiCopy(language, "最近执行", "Recent episodes", "최근 실행")}: ${recent.length}`,
       ...recent.map((episode) => `- ${episode.status} | ${episode.startedAt}`),
     ].join("\n");
   } finally {
@@ -245,7 +259,11 @@ export function resolveTuiAgentRoute(
   if (/^\/confirm$/i.test(input)) {
     const pending = session.pendingProposedAction;
     if (!pending) {
-      return localConfirmationRoute(currentKind, input, language === "en" ? "There is no pending action." : "没有待确认的动作。");
+      return localConfirmationRoute(
+        currentKind,
+        input,
+        uiCopy(language, "没有待确认的动作。", "There is no pending action.", "확인 대기 중인 작업이 없습니다."),
+      );
     }
     const requestedIntent = RequestedIntentSchema.safeParse(pending.action);
     const actionPayload = pending.actionPayload === undefined
@@ -255,9 +273,12 @@ export function resolveTuiAgentRoute(
       return localConfirmationRoute(
         currentKind,
         input,
-        language === "en"
-          ? "This pending action is no longer valid. Please propose it again."
-          : "这条待确认动作已失效，请重新提出需求。",
+        uiCopy(
+          language,
+          "这条待确认动作已失效，请重新提出需求。",
+          "This pending action is no longer valid. Please propose it again.",
+          "확인 대기 중인 작업이 더 이상 유효하지 않습니다. 다시 요청하세요.",
+        ),
       );
     }
     return {
@@ -278,8 +299,8 @@ export function resolveTuiAgentRoute(
       currentKind,
       input,
       session.pendingProposedAction
-        ? language === "en" ? "Pending action cancelled." : "已取消待确认动作。"
-        : language === "en" ? "There is no pending action." : "没有待确认的动作。",
+        ? uiCopy(language, "已取消待确认动作。", "Pending action cancelled.", "확인 대기 중인 작업을 취소했습니다.")
+        : uiCopy(language, "没有待确认的动作。", "There is no pending action.", "확인 대기 중인 작업이 없습니다."),
     );
   }
 
@@ -394,6 +415,9 @@ function extractProposedAction(messages: ReadonlyArray<unknown>): PendingPropose
 }
 
 function formatProposedAction(action: PendingProposedAction, language: "zh" | "en"): string {
+  if (isKoreanUi()) {
+    return [action.title ?? "작업 확인", action.summary ?? "확인하면 계속 진행합니다.", "", action.instruction, "", "계속하려면 /confirm, 취소하려면 /cancel을 입력하세요."].join("\n");
+  }
   return language === "en"
     ? [action.title ?? "Confirm action", action.summary ?? "Confirm to continue.", "", action.instruction, "", "Type /confirm to continue, or /cancel to cancel."].join("\n")
     : [action.title ?? "确认执行", action.summary ?? "确认后继续执行。", "", action.instruction, "", "输入 /confirm 继续，或 /cancel 取消。"].join("\n");

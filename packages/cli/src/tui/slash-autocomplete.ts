@@ -1,10 +1,11 @@
 import type { CliLanguage } from "../localization.js";
+import { isKoreanUi } from "../ui-locale.js";
 
-const SLASH_COMMAND_VARIANTS: ReadonlyArray<{ zh: string; en: string }> = [
-  { zh: "/new 输入你的想法", en: "/new describe your idea" },
-  { zh: "/short 输入短篇方向", en: "/short describe the short" },
-  { zh: "/play [open|guided] 输入互动世界开局", en: "/play [open|guided] describe the opening" },
-  { zh: "/cover 输入封面方向", en: "/cover describe the cover" },
+const SLASH_COMMAND_VARIANTS: ReadonlyArray<{ zh: string; en: string; ko?: string }> = [
+  { zh: "/new 输入你的想法", en: "/new describe your idea", ko: "/new 아이디어 설명" },
+  { zh: "/short 输入短篇方向", en: "/short describe the short", ko: "/short 단편 방향 설명" },
+  { zh: "/play [open|guided] 输入互动世界开局", en: "/play [open|guided] describe the opening", ko: "/play [open|guided] 인터랙티브 월드 시작 설명" },
+  { zh: "/cover 输入封面方向", en: "/cover describe the cover", ko: "/cover 표지 방향 설명" },
   { zh: "/write", en: "/write" },
   { zh: "/confirm", en: "/confirm" },
   { zh: "/cancel", en: "/cancel" },
@@ -18,6 +19,9 @@ const SLASH_COMMAND_VARIANTS: ReadonlyArray<{ zh: string; en: string }> = [
 ];
 
 export function buildSlashCommands(language: CliLanguage = "zh"): readonly string[] {
+  if (isKoreanUi()) {
+    return SLASH_COMMAND_VARIANTS.map((variant) => variant.ko ?? variant.en);
+  }
   return SLASH_COMMAND_VARIANTS.map((variant) => (language === "en" ? variant.en : variant.zh));
 }
 

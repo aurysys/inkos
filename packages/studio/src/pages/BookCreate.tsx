@@ -4,6 +4,7 @@ import { fetchJson, useApi } from "../hooks/use-api";
 import type { Theme } from "../hooks/use-theme";
 import type { TFunction } from "../hooks/use-i18n";
 import { useColors } from "../hooks/use-colors";
+import { getUiLocale, tr } from "../lib/app-language";
 
 interface Nav {
   toDashboard: () => void;
@@ -13,6 +14,8 @@ interface Nav {
 interface PlatformOption {
   readonly value: string;
   readonly label: string;
+  /** 韩语界面的展示名；平台品牌名不翻译，留空时用 label。 */
+  readonly ko?: string;
 }
 
 export interface BookCreateFormState {
@@ -56,17 +59,17 @@ const PLATFORMS_ZH: ReadonlyArray<PlatformOption> = [
   { value: "tomato", label: "番茄小说" },
   { value: "qidian", label: "起点中文网" },
   { value: "feilu", label: "飞卢" },
-  { value: "other", label: "其他" },
+  { value: "other", label: "其他", ko: "기타" },
 ];
 
 const PLATFORMS_EN: ReadonlyArray<PlatformOption> = [
   { value: "royal-road", label: "Royal Road" },
   { value: "kindle-unlimited", label: "Kindle Unlimited" },
   { value: "scribble-hub", label: "Scribble Hub" },
-  { value: "other", label: "Other" },
+  { value: "other", label: "Other", ko: "기타" },
 ];
 
-const PAGE_COPY: Record<"zh" | "en", PlatformCopy> = {
+const PAGE_COPY: Record<"zh" | "en" | "ko", PlatformCopy> = {
   zh: {
     heading: "创建长篇 Work",
     hint: "这里提交的是明确建书动作。想先讨论和完善方向，请回到 Studio Chat 自然交流，确认卡会携带同一份结构化建书参数。",
@@ -100,6 +103,23 @@ const PAGE_COPY: Record<"zh" | "en", PlatformCopy> = {
     creatingBook: "Creating…",
     creationStatus: "Creating the Work. Its workspace will open when the artifact is ready.",
     creationSteps: ["Saving Work config", "Generating foundation", "Registering artifacts"],
+  },
+  ko: {
+    heading: "장편 작품 만들기",
+    hint: "이 화면에서는 책 생성을 바로 실행합니다. 방향을 먼저 논의하고 다듬으려면 Studio 대화에서 자유롭게 이야기하세요. 대화의 확인 카드에도 같은 구조화된 생성 매개변수가 담깁니다.",
+    titleLabel: "제목",
+    titlePlaceholder: "예: 밤 항구의 장부",
+    genreLabel: "장르",
+    genrePlaceholder: "예: 현대 미스터리, 현대 판타지, SF, 로맨스",
+    platformLabel: "대상 플랫폼",
+    targetChaptersLabel: "목표 챕터 수",
+    chapterWordCountLabel: "챕터당 글자 수",
+    briefLabel: "줄거리 / 핵심 설정",
+    briefPlaceholder: "세계관, 주인공, 목표, 핵심 갈등, 첫 단계의 전개 방향을 적으세요.",
+    createBook: "책 만들기",
+    creatingBook: "만드는 중…",
+    creationStatus: "작품을 만드는 중입니다. 완료되면 작업 공간이 자동으로 열립니다.",
+    creationSteps: ["작품 설정 저장", "기본 설정 생성", "창작 자산 등록"],
   },
 };
 
@@ -146,7 +166,7 @@ export function buildBookCreatePayload(form: BookCreateFormState, language: "zh"
   const targetChapters = parsePositiveInteger(form.targetChapters);
   const chapterWordCount = parsePositiveInteger(form.chapterWordCount);
   if (!targetChapters || !chapterWordCount || !isBookCreateFormReady(form)) {
-    throw new Error(language === "zh" ? "请先补齐建书表单。" : "Complete the book creation form first.");
+    throw new Error(tr("请先补齐建书表单。", "Complete the book creation form first.", "책 생성 양식을 먼저 모두 채우세요."));
   }
   return {
     title: form.title.trim(),
@@ -184,7 +204,7 @@ export async function waitForBookReady(bookId: string, options: WaitForBookReady
       try {
         const result = await fetchStatus(bookId);
         lastKnownStatus = result.status;
-        if (result.status === "error") throw new Error(result.error ?? `Book "${bookId}" failed to create`);
+        if (result.status === "error") throw new Error(result.error ?? tr(`书籍“${bookId}”创建失败`, `Book "${bookId}" failed to create`, `책 "${bookId}"을(를) 만들지 못했습니다`));
       } catch (statusError) {
         if (statusError instanceof Error && statusError.message !== "404 Not Found") throw statusError;
       }
@@ -193,16 +213,16 @@ export async function waitForBookReady(bookId: string, options: WaitForBookReady
     }
   }
   if (lastKnownStatus === "creating") {
-    throw new Error(`Book "${bookId}" is still being created. Wait a moment and refresh.`);
+    throw new Error(tr(`书籍“${bookId}”仍在创建中，请稍候再刷新。`, `Book "${bookId}" is still being created. Wait a moment and refresh.`, `책 "${bookId}"을(를) 아직 만드는 중입니다. 잠시 후 새로 고침하세요.`));
   }
-  throw lastError instanceof Error ? lastError : new Error(`Book "${bookId}" was not ready`);
+  throw lastError instanceof Error ? lastError : new Error(tr(`书籍“${bookId}”尚未就绪`, `Book "${bookId}" was not ready`, `책 "${bookId}"이(가) 아직 준비되지 않았습니다`));
 }
 
 export function BookCreate({ nav, theme, t: _t }: { nav: Nav; theme: Theme; t: TFunction }) {
   const c = useColors(theme);
   const { data: project } = useApi<{ language: string }>("/project");
   const projectLang = project?.language === "en" ? "en" : "zh";
-  const copy = PAGE_COPY[projectLang];
+  const copy = getUiLocale() === "ko" ? PAGE_COPY.ko : PAGE_COPY[projectLang];
   const platformChoices = platformOptionsForLanguage(projectLang);
   const [form, setForm] = useState<BookCreateFormState>(() => defaultBookCreateForm(projectLang));
   const [creating, setCreating] = useState(false);
@@ -230,7 +250,7 @@ export function BookCreate({ nav, theme, t: _t }: { nav: Nav; theme: Theme; t: T
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(buildBookCreatePayload(form, projectLang)),
       });
-      if (!data.bookId) throw new Error(projectLang === "zh" ? "创建动作没有返回 Work ID。" : "Creation did not return a Work ID.");
+      if (!data.bookId) throw new Error(tr("创建动作没有返回 Work ID。", "Creation did not return a Work ID.", "생성 요청이 작품 ID를 반환하지 않았습니다."));
       await waitForBookReady(data.bookId);
       nav.toBook(data.bookId);
     } catch (cause) {
@@ -263,7 +283,7 @@ export function BookCreate({ nav, theme, t: _t }: { nav: Nav; theme: Theme; t: T
             <label className="space-y-2">
               <span className="text-xs font-medium text-muted-foreground">{copy.platformLabel}</span>
               <select value={form.platform} onChange={(event) => updateForm({ platform: event.target.value })} className={`w-full ${c.input} rounded-md bg-background px-3 py-2.5 text-sm focus:outline-none`}>
-                {platformChoices.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                {platformChoices.map((option) => <option key={option.value} value={option.value}>{getUiLocale() === "ko" && option.ko ? option.ko : option.label}</option>)}
               </select>
             </label>
             <label className="space-y-2">

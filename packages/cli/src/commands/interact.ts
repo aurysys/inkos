@@ -5,6 +5,7 @@ import {
   runAgentSession,
 } from "@actalk/inkos-core";
 import { buildPipelineConfig, createClient, findProjectRoot, loadConfig } from "../utils.js";
+import { uiText } from "../ui-locale.js";
 
 export interface InteractCommandHooks {
   readonly readInput?: () => Promise<string>;
@@ -43,25 +44,28 @@ async function readInteractionInput(
     }
   }
 
-  throw new Error("Interaction message is required. Pass text arguments or pipe input via stdin.");
+  throw new Error(uiText(
+    "Interaction message is required. Pass text arguments or pipe input via stdin.",
+    "대화 메시지가 필요합니다. 텍스트 인수로 넘기거나 stdin으로 입력을 파이프하세요.",
+  ));
 }
 
 export function createInteractCommand(hooks: InteractCommandHooks = {}): Command {
   return new Command("interact")
-    .description("Run a natural-language agent interaction against the current project")
-    .argument("[message...]", "Natural-language message")
-    .option("--message <text>", "Explicit natural-language message")
-    .option("--book <bookId>", "Bind a specific active book for this interaction")
-    .option("--work <workId>", "Bind any existing creative Work for this interaction")
-    .option("--session <sessionId>", "Reuse an agent session id")
-    .option("--json", "Emit structured JSON for external agents")
+    .description(uiText("Run a natural-language agent interaction against the current project", "현재 프로젝트에서 자연어로 에이전트와 대화합니다"))
+    .argument("[message...]", uiText("Natural-language message", "자연어 메시지"))
+    .option("--message <text>", uiText("Explicit natural-language message", "명시적으로 전달할 자연어 메시지"))
+    .option("--book <bookId>", uiText("Bind a specific active book for this interaction", "이 대화에 특정 책을 연결합니다"))
+    .option("--work <workId>", uiText("Bind any existing creative Work for this interaction", "이 대화에 기존 창작 작품을 연결합니다"))
+    .option("--session <sessionId>", uiText("Reuse an agent session id", "기존 에이전트 세션 ID를 재사용합니다"))
+    .option("--json", uiText("Emit structured JSON for external agents", "외부 에이전트용 구조화된 JSON을 출력합니다"))
     .action(async (messageArgs: ReadonlyArray<string>, opts) => {
       const input = await readInteractionInput(messageArgs, opts.message, hooks.readInput);
       const projectRoot = findProjectRoot();
       const config = await loadConfig({ requireApiKey: false, projectRoot });
       const client = createClient(config);
       const bookId = typeof opts.book === "string" && opts.book.trim() ? opts.book.trim() : null;
-      if (bookId && opts.work) throw new Error("Use either --book or --work, not both.");
+      if (bookId && opts.work) throw new Error(uiText("Use either --book or --work, not both.", "--book과 --work 중 하나만 지정하세요."));
       const work = typeof opts.work === "string" && opts.work.trim()
         ? await loadWorkManifest(projectRoot, opts.work.trim())
         : null;

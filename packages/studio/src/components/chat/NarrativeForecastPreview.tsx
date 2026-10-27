@@ -92,22 +92,19 @@ export function buildNarrativeForecastRecheckInstruction(
     : `Call get_narrative_forecast for forecast ${forecastId} and report whether it is stale.`;
 }
 
-const RISK_LABELS: Readonly<Record<string, readonly [string, string]>> = {
-  continuity: ["连续性", "Continuity"],
-  causality: ["因果", "Causality"],
-  character: ["人物", "Character"],
+// [zh, en, ko]
+const RISK_LABELS: Readonly<Record<string, readonly [string, string, string]>> = {
+  continuity: ["连续性", "Continuity", "연속성"],
+  causality: ["因果", "Causality", "인과"],
+  character: ["人物", "Character", "인물"],
 };
 
-function label(zh: boolean, values: readonly [string, string]): string {
-  return zh ? values[0] : values[1];
-}
-
-function RiskPills({ risks, zh }: { risks: readonly ForecastRisk[]; zh: boolean }) {
+function RiskPills({ risks }: { risks: readonly ForecastRisk[] }) {
   if (risks.length === 0) {
     return (
       <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/5 px-2 py-0.5 text-[11px] text-emerald-700 dark:text-emerald-300">
         <ShieldCheck size={11} />
-        {zh ? "未发现硬风险" : "No hard risks"}
+        {tr("未发现硬风险", "No hard risks", "치명적 위험 없음")}
       </span>
     );
   }
@@ -119,7 +116,7 @@ function RiskPills({ risks, zh }: { risks: readonly ForecastRisk[]; zh: boolean 
           title={risk.description}
           className="inline-flex items-center rounded-full border border-amber-500/25 bg-amber-500/8 px-2 py-0.5 text-[11px] text-amber-800 dark:text-amber-200"
         >
-          {RISK_LABELS[risk.kind] ? label(zh, RISK_LABELS[risk.kind]!) : risk.kind}
+          {RISK_LABELS[risk.kind] ? tr(...RISK_LABELS[risk.kind]!) : risk.kind}
         </span>
       ))}
     </div>
@@ -142,14 +139,12 @@ function BranchCard({
   branch,
   forecastId,
   stale,
-  zh,
   pending,
   onSelect,
 }: {
   readonly branch: ForecastBranch;
   readonly forecastId: string;
   readonly stale: boolean;
-  readonly zh: boolean;
   readonly pending: boolean;
   readonly onSelect?: (branchId: string) => void;
 }) {
@@ -171,29 +166,29 @@ function BranchCard({
         {branch.beats.map((beat) => (
           <li key={`${branch.branchId}-${beat.chapter}`} className="relative text-xs leading-5 text-foreground/90">
             <span className="absolute -left-[15px] top-[7px] h-1.5 w-1.5 rounded-full bg-primary/65" />
-            <span className="font-medium text-primary">{zh ? `第 ${beat.chapter} 章` : `Ch. ${beat.chapter}`}</span>
+            <span className="font-medium text-primary">{tr(`第 ${beat.chapter} 章`, `Ch. ${beat.chapter}`, `${beat.chapter}장`)}</span>
             <span className="ml-1.5">{beat.summary}</span>
           </li>
         ))}
       </ol>
 
-      <div className="mt-3"><RiskPills risks={branch.risks} zh={zh} /></div>
+      <div className="mt-3"><RiskPills risks={branch.risks} /></div>
 
       <details className="group mt-3 border-t border-border/40 pt-2.5">
         <summary className="flex cursor-pointer list-none items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground [&::-webkit-details-marker]:hidden">
           <ChevronRight size={13} className="transition-transform group-open:rotate-90" />
-          {zh ? "人物决定、变化与不确定性" : "Decisions, changes, uncertainties"}
+          {tr("人物决定、变化与不确定性", "Decisions, changes, uncertainties", "인물의 결정·변화·불확실성")}
         </summary>
         <div className="mt-3 space-y-3">
           <ChangeList
-            title={zh ? "人物决定" : "Character decisions"}
+            title={tr("人物决定", "Character decisions", "인물의 결정")}
             items={branch.characterDecisions.map((item) => `${item.character}：${item.decision}`)}
           />
-          <ChangeList title={zh ? "人物变化" : "Character changes"} items={branch.projectedChanges.characters} />
-          <ChangeList title={zh ? "关系变化" : "Relationship changes"} items={branch.projectedChanges.relationships} />
-          <ChangeList title={zh ? "世界变化" : "World changes"} items={branch.projectedChanges.world} />
-          <ChangeList title={zh ? "伏笔变化" : "Hook changes"} items={branch.projectedChanges.hooks} />
-          <ChangeList title={zh ? "不确定性" : "Uncertainties"} items={branch.uncertainties} />
+          <ChangeList title={tr("人物变化", "Character changes", "인물 변화")} items={branch.projectedChanges.characters} />
+          <ChangeList title={tr("关系变化", "Relationship changes", "관계 변화")} items={branch.projectedChanges.relationships} />
+          <ChangeList title={tr("世界变化", "World changes", "세계 변화")} items={branch.projectedChanges.world} />
+          <ChangeList title={tr("伏笔变化", "Hook changes", "복선 변화")} items={branch.projectedChanges.hooks} />
+          <ChangeList title={tr("不确定性", "Uncertainties", "불확실성")} items={branch.uncertainties} />
           <p className="rounded-lg bg-muted/45 px-2.5 py-2 text-xs leading-5 text-muted-foreground">
             {branch.intentRationale}
           </p>
@@ -210,8 +205,8 @@ function BranchCard({
       >
         {pending ? <RefreshCw size={13} className="animate-spin" /> : <Check size={13} />}
         {stale
-          ? (zh ? "过期推演不可采用" : "Stale forecast")
-          : (zh ? "采用此分支" : "Use this branch")}
+          ? tr("过期推演不可采用", "Stale forecast", "만료된 예측 · 채택 불가")
+          : tr("采用此分支", "Use this branch", "이 분기 채택")}
       </button>
     </article>
   );
@@ -228,17 +223,18 @@ export function NarrativeForecastPreview({ exec, onSelectBranch, onRecheck }: Na
       <div className="mx-3 mb-3 mt-1 rounded-xl border border-primary/25 bg-primary/5 px-3.5 py-3">
         <div className="flex items-center gap-2 text-sm font-semibold text-primary">
           <Check size={15} />
-          {tr("候选分支已保存", "Candidate branch saved")}
+          {tr("候选分支已保存", "Candidate branch saved", "후보 분기를 저장했습니다")}
         </div>
         <p className="mt-1.5 text-xs leading-5 text-muted-foreground">
           {tr(
             `${details.branchId} 已写入候选计划；正文、大纲和正史状态没有修改。`,
             `${details.branchId} was written to the candidate plan; prose, outline, and canon were not modified.`,
+            `${details.branchId} 분기를 후보 계획에 저장했습니다. 본문, 개요, 확정 설정은 바뀌지 않았습니다.`,
           )}
         </p>
         {details.stale && (
           <p className="mt-2 text-xs text-amber-700 dark:text-amber-300">
-            {tr("该推演基于旧正史，请核验后再继续写作。", "This forecast is stale; verify it before writing.")}
+            {tr("该推演基于旧正史，请核验后再继续写作。", "This forecast is stale; verify it before writing.", "이 예측은 이전 확정 설정을 기준으로 합니다. 다시 확인한 뒤 집필을 이어가세요.")}
           </p>
         )}
       </div>
@@ -246,7 +242,6 @@ export function NarrativeForecastPreview({ exec, onSelectBranch, onRecheck }: Na
   }
 
   const { forecast, stale } = details;
-  const zh = forecast.language === "zh";
   const selectBranch = async (branchId: string) => {
     if (!onSelectBranch || stale) return;
     setPendingBranch(branchId);
@@ -274,23 +269,23 @@ export function NarrativeForecastPreview({ exec, onSelectBranch, onRecheck }: Na
             <div className="flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-1.5 text-[15px] font-semibold text-foreground">
                 <GitFork size={16} className="text-primary" />
-                {zh ? "剧情多线推演" : "Narrative forecast"}
+                {tr("剧情多线推演", "Narrative forecast", "전개 예측")}
               </span>
               <span className="rounded-full border border-primary/20 bg-primary/8 px-2 py-0.5 text-[10px] font-medium tracking-wide text-primary">
-                {zh ? "非正史规划" : "NON-CANONICAL"}
+                {tr("非正史规划", "NON-CANONICAL", "비확정 계획")}
               </span>
               {stale && (
                 <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/25 bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-800 dark:text-amber-200">
                   <AlertTriangle size={11} />
-                  {zh ? "正史已变化" : "Canon changed"}
+                  {tr("正史已变化", "Canon changed", "확정 설정 변경됨")}
                 </span>
               )}
             </div>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-foreground/85">{forecast.divergence}</p>
             <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
-              <span>{zh ? `基于第 ${forecast.baseChapter} 章` : `After chapter ${forecast.baseChapter}`}</span>
-              <span>{zh ? `${forecast.branches.length} 条候选分支` : `${forecast.branches.length} branches`}</span>
-              <span>{zh ? `推演未来约 ${forecast.horizon} 章` : `~${forecast.horizon} chapters ahead`}</span>
+              <span>{tr(`基于第 ${forecast.baseChapter} 章`, `After chapter ${forecast.baseChapter}`, `${forecast.baseChapter}장 기준`)}</span>
+              <span>{tr(`${forecast.branches.length} 条候选分支`, `${forecast.branches.length} branches`, `후보 분기 ${forecast.branches.length}개`)}</span>
+              <span>{tr(`推演未来约 ${forecast.horizon} 章`, `~${forecast.horizon} chapters ahead`, `이후 약 ${forecast.horizon}장 예측`)}</span>
             </div>
           </div>
           {onRecheck && (
@@ -301,14 +296,14 @@ export function NarrativeForecastPreview({ exec, onSelectBranch, onRecheck }: Na
               className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-border/60 bg-background/60 px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:border-primary/30 hover:text-foreground disabled:opacity-50"
             >
               <RefreshCw size={12} className={rechecking ? "animate-spin" : ""} />
-              {zh ? "重新核验" : "Recheck"}
+              {tr("重新核验", "Recheck", "다시 확인")}
             </button>
           )}
         </div>
         {stale && (
           <div className="mt-3 flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/8 px-3 py-2 text-xs leading-5 text-amber-900 dark:text-amber-100">
             <AlertTriangle size={14} className="mt-0.5 shrink-0" />
-            <span>{zh ? "正史输入已在生成后变化。请重新推演，不要继续采用旧分支。" : "Canonical inputs changed after generation. Regenerate before selecting a branch."}</span>
+            <span>{tr("正史输入已在生成后变化。请重新推演，不要继续采用旧分支。", "Canonical inputs changed after generation. Regenerate before selecting a branch.", "예측을 만든 뒤 확정 설정이 바뀌었습니다. 이전 분기를 채택하지 말고 다시 예측하세요.")}</span>
           </div>
         )}
       </header>
@@ -325,7 +320,6 @@ export function NarrativeForecastPreview({ exec, onSelectBranch, onRecheck }: Na
               branch={branch}
               forecastId={forecast.forecastId}
               stale={stale}
-              zh={zh}
               pending={pendingBranch === branch.branchId}
               onSelect={onSelectBranch ? (branchId) => { void selectBranch(branchId); } : undefined}
             />
