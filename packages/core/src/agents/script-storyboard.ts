@@ -2,6 +2,7 @@ import { BaseAgent } from "./base.js";
 import { completeLongForm } from "../llm/long-form-completion.js";
 import { materializeStoryGraph } from "../interactive-film/generate.js";
 import { InteractiveFilmPackageToolSchema, StoryboardPackageToolSchema } from "./production-document-tool.js";
+import { toPromptLanguage, writingLanguageDirective, type WritingLanguage } from "../utils/writing-language.js";
 
 export type ScriptTargetFormat = string;
 
@@ -14,7 +15,7 @@ export interface ScriptCreationInput {
   readonly requirements?: string;
   readonly episodeCount?: number;
   readonly episodeDuration?: string;
-  readonly language?: "zh" | "en";
+  readonly language?: WritingLanguage;
 }
 
 export interface StoryboardCreationInput {
@@ -27,7 +28,7 @@ export interface StoryboardCreationInput {
   readonly aspectRatio?: string;
   readonly granularity?: string;
   readonly maxShots?: number;
-  readonly language?: "zh" | "en";
+  readonly language?: WritingLanguage;
 }
 
 export interface InteractiveFilmCreationInput {
@@ -88,9 +89,10 @@ export class ScriptCreationAgent extends BaseAgent {
     return response.content.trim();
   }
   async writeScript(input: ScriptCreationInput): Promise<string> {
-    const language = input.language ?? "zh";
+    // Korean scripts run on the English prompt set plus a Korean output contract.
+    const language = toPromptLanguage(input.language);
     const messages = [
-      { role: "system", content: buildScriptCreationSystemPrompt(language) },
+      { role: "system", content: withWritingLanguage(buildScriptCreationSystemPrompt(language), input.language) },
       { role: "user", content: buildScriptCreationUserPrompt(input, language) },
     ] as const;
     const response = await completeLongForm({
@@ -117,9 +119,16 @@ export class StoryboardCreationAgent extends BaseAgent {
   }
 
   async writeStoryboard(input: StoryboardCreationInput) {
-    const language = input.language ?? "zh";
+    const language = toPromptLanguage(input.language);
     const { result } = await this.submitStructured([
-      { role: "system", content: buildStoryboardCreationSystemPrompt(language) },
+      {
+        role: "system",
+        content: withWritingLanguage(
+          buildStoryboardCreationSystemPrompt(language),
+          input.language,
+          "Exception: write every imagePrompts entry in English so image-generation models can follow it; the storyboard document itself stays in the Work's language.",
+        ),
+      },
       { role: "user", content: buildStoryboardCreationUserPrompt(input, language) },
     ], {
       name: "submit_storyboard_package",
@@ -168,6 +177,12 @@ export class InteractiveFilmCreationAgent extends BaseAgent {
   }
 }
 
+/** Appends the output-language contract when the writing language differs from the prompt language. */
+function withWritingLanguage(systemPrompt: string, writingLanguage: WritingLanguage | undefined, exception?: string): string {
+  const directive = writingLanguageDirective(writingLanguage);
+  return directive ? [systemPrompt, directive, exception].filter(Boolean).join("\n\n") : systemPrompt;
+}
+
 function productionBrief(input: {authorRequest?: string; requirements?: string}, language: "zh" | "en") {
   const en = language === "en";
   return [
@@ -180,7 +195,7 @@ function productionBrief(input: {authorRequest?: string; requirements?: string},
 }
 
 export function renderScriptSpec(input: ScriptCreationInput): string {
-  if ((input.language ?? "zh") === "en") {
+  if (toPromptLanguage(input.language) === "en") {
     return [
       `# ${input.title} Script Creation Spec`,
       "",
@@ -219,7 +234,7 @@ export function renderScriptSpec(input: ScriptCreationInput): string {
 }
 
 export function renderStoryboardSpec(input: StoryboardCreationInput): string {
-  if ((input.language ?? "zh") === "en") {
+  if (toPromptLanguage(input.language) === "en") {
     return [
       `# ${input.title} Storyboard Creation Spec`,
       "",

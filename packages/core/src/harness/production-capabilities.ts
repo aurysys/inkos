@@ -313,7 +313,7 @@ export function createProductionCapabilityRegistry(
   registerToolCapability(registry, "script", "Script creation", [
     ...scopedProduction(createScriptCreationTool(environment.pipeline, environment.projectRoot, {
       actionPayload: environment.confirmedCreation ? environment.actionPayload : undefined,
-      language: promptLang,
+      language: lang,
       defaultSkills: environment.profileSkills?.("script"),
       activeSkills: environment.activeSkills,
     }), environment),
@@ -321,7 +321,7 @@ export function createProductionCapabilityRegistry(
   registerToolCapability(registry, "storyboard", "Storyboard creation", [
     ...scopedProduction(createStoryboardCreationTool(environment.pipeline, environment.projectRoot, {
       actionPayload: environment.confirmedCreation ? environment.actionPayload : undefined,
-      language: promptLang,
+      language: lang,
       defaultSkills: environment.profileSkills?.("storyboard"),
       activeSkills: environment.activeSkills,
     }), environment),

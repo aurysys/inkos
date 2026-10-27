@@ -123,7 +123,7 @@ export async function prepareWorkerMessages(
     }
     // Korean Works run on the English prompt set; pin the prose language for every worker.
     const languageDirective=writingLanguageDirective(work?.language);
-    if(languageDirective) messages=[{role:"system",content:languageDirective},...messages];
+    if(languageDirective&&!messages.some(message=>message.content.includes(languageDirective))) messages=[{role:"system",content:languageDirective},...messages];
     const query = messages
       .filter((message) => message.role === "user")
       .map((message) => message.content)

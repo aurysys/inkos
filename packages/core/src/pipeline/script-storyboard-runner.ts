@@ -23,6 +23,7 @@ import { createWorkManifest, loadWorkManifest, saveWorkManifest } from "../harne
 import { readArtifactRevision } from "../harness/artifact-reader.js";
 import { createBuiltInWorkProfileRegistry } from '../harness/builtin-profiles.js';
 import { currentExecutionAuthorRequest } from '../harness/execution-evidence.js';
+import { toPromptLanguage, type WritingLanguage } from "../utils/writing-language.js";
 
 export interface ScriptCreationRunOptions {
   readonly projectRoot: string;
@@ -36,7 +37,7 @@ export interface ScriptCreationRunOptions {
   readonly requirements?: string;
   readonly episodeCount?: number;
   readonly episodeDuration?: string;
-  readonly language?: "zh" | "en";
+  readonly language?: WritingLanguage;
   readonly projectId?: string;
   readonly onProgress?: (message: string) => void;
 }
@@ -54,7 +55,7 @@ export interface StoryboardCreationRunOptions {
   readonly aspectRatio?: string;
   readonly granularity?: string;
   readonly maxShots?: number;
-  readonly language?: "zh" | "en";
+  readonly language?: WritingLanguage;
   readonly projectId?: string;
   readonly onProgress?: (message: string) => void;
 }
@@ -443,7 +444,7 @@ async function ensureUnwrittenWork(
   projectId: string,
   title: string,
   profileId: "script" | "storyboard" | "interactive-film",
-  language: "zh" | "en",
+  language: WritingLanguage,
 ): Promise<void> {
   try {
     const existing = await loadWorkManifest(projectRoot, projectId);
@@ -516,9 +517,9 @@ async function ensureProjectDir(projectRoot: string, relativePath: string): Prom
 function mergeRequirements(
   instruction: string,
   requirements: string | undefined,
-  language: "zh" | "en" = "zh",
+  language: WritingLanguage = "zh",
 ): string {
-  const extraLabel = language === "en" ? "Additional requirements:" : "补充要求：";
+  const extraLabel = toPromptLanguage(language) === "en" ? "Additional requirements:" : "补充要求：";
   return [
     instruction.trim(),
     requirements?.trim() ? `\n${extraLabel}\n${requirements.trim()}` : "",

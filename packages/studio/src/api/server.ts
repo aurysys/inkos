@@ -1280,7 +1280,7 @@ async function executeConfirmedProductionAction(args: {
     const title = requirePayloadText(payload?.title, pick(lang, "确认创建剧本缺少标题，请重新生成确认卡。", "The script creation confirmation is missing a title. Regenerate the confirmation card.", "대본 작성 확인에 제목이 없습니다. 확인 카드를 다시 생성하세요."));
     tool = createScriptCreationTool(args.pipeline, args.root, {
       actionPayload,
-      language: lang,
+      language: writingLanguage,
       defaultSkills: profileSkills("script"),
     });
     params = {
@@ -1300,7 +1300,7 @@ async function executeConfirmedProductionAction(args: {
     const title = requirePayloadText(payload?.title, pick(lang, "确认创建分镜缺少标题，请重新生成确认卡。", "The storyboard creation confirmation is missing a title. Regenerate the confirmation card.", "스토리보드 작성 확인에 제목이 없습니다. 확인 카드를 다시 생성하세요."));
     tool = createStoryboardCreationTool(args.pipeline, args.root, {
       actionPayload,
-      language: lang,
+      language: writingLanguage,
       defaultSkills: profileSkills("storyboard"),
     });
     params = {

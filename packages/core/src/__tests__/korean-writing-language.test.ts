@@ -15,6 +15,7 @@ import {
 import { readChapterHeading, splitChapters } from "../utils/chapter-splitter.js";
 import { chapterDocumentBody, renderChapterDocument } from "../utils/chapter-document.js";
 import { BookConfigSchema } from "../models/book.js";
+import { renderScriptSpec, renderStoryboardSpec } from "../agents/script-storyboard.js";
 
 describe("Korean writing language", () => {
   it("runs Korean books on the English prompt set with a Korean output contract", () => {
@@ -66,6 +67,14 @@ describe("Korean writing language", () => {
     const chapters = splitChapters("1화 시작\n첫 문단.\n\n2화 전환\n둘째 문단.\n10장 정도 되는 편지를 다 읽었다.");
     expect(chapters.map((chapter) => chapter.title)).toEqual(["시작", "전환"]);
     expect(chapters[1]?.content).toContain("10장 정도 되는 편지를");
+  });
+
+  it("renders Korean script and storyboard specs on the English layout, not the Chinese one", () => {
+    const storyboard = renderStoryboardSpec({ title: "폐성당의 첫 보스", language: "ko", maxShots: 6 });
+    const script = renderScriptSpec({ title: "폐성당의 첫 보스", language: "ko" });
+    expect(storyboard).toContain("Storyboard Creation Spec");
+    expect(script).toContain("Script Creation Spec");
+    expect(`${storyboard}${script}`).not.toMatch(/[分镜剧本规格]/u);
   });
 
   it("renders Korean chapter documents with a 제N장 heading", () => {
